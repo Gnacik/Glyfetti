@@ -10,6 +10,14 @@
   <form id="controls">
     <label for="output-mode">Make something for your game</label><select id="output-mode"><option value="atlas">Font atlas · reusable alphabet</option><option value="title">Title PNG · shared effects</option></select>
     <label for="preset">01 / Starting point</label><select id="preset"></select>
+    <details class="simple-builder"><summary>Start from a color or palette</summary><p>Create a fresh look, then fine-tune it with the controls below.</p>
+      <label for="simple-palette">Palette</label><select id="simple-palette"><option value="custom">My color</option><option value="gold">Gold</option><option value="cream">Cream</option><option value="candy">Candy</option><option value="mint">Mint</option><option value="ice">Ice</option><option value="fire">Fire</option><option value="magic">Magic</option><option value="wood">Wood</option><option value="silver">Silver</option></select>
+      <label for="simple-color">Base color</label><input id="simple-color" type="color" value="#f5b845">
+      <label class="range-label" for="simple-depth">3D depth <output id="simple-depth-value">0.6</output></label><input id="simple-depth" type="range" min="0" max="1" step="0.05" value="0.6">
+      <label class="range-label" for="simple-shine">Shine <output id="simple-shine-value">0.5</output></label><input id="simple-shine" type="range" min="0" max="1" step="0.05" value="0.5">
+      <label class="range-label" for="simple-playful">Playful <output id="simple-playful-value">0.1</output></label><input id="simple-playful" type="range" min="0" max="1" step="0.05" value="0.1">
+      <button id="apply-simple" type="button" disabled>Create style</button>
+    </details>
     <label for="font">Typeface</label><select id="font"></select>
     <details><summary>Use your own font</summary><label for="font-path">Absolute TTF / OTF path on this computer</label><input id="font-path" type="text" placeholder="C:\Fonts\MyFont.ttf"><button type="button" id="use-font">Use font</button></details>
     <label for="text">02 / Your words</label><textarea id="text" rows="3" maxlength="1000" spellcheck="false">Level Complete!

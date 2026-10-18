@@ -2,8 +2,7 @@
 
 🌐 **English** | [Polski](STYLE_REFERENCE.pl.md)
 
-> Document version: 0.1-draft. Sections marked **[planned]** describe the simple style layer,
-> which will ship in version 0.1. Everything else matches the current release (`glyfetti build`).
+> Document version: 0.1.4. Simple and raw styles work with atlas builds and whole-title PNG exports.
 
 A style is a single JSON file. Glyfetti renders every character of a font through the same
 stack of layers and writes a PNG atlas + metrics (BMFont `.fnt`, JSON for Unity/TMP) + a preview.
@@ -12,7 +11,7 @@ Styles can be written at two levels:
 
 | Level | For whom | Number of parameters |
 |---|---|---|
-| **Simple** [planned] | people, chat assistants via MCP, sliders in the web UI | ~12 knobs |
+| **Simple** | people, chat assistants via MCP, sliders in the web UI | ~12 knobs |
 | **Raw** | fine-tuning, full control | every layer separately |
 
 A simple style is automatically expanded into a raw one. If a file contains both levels,
@@ -41,56 +40,74 @@ Colors are `#RRGGBB` hex. Opacity (`opacity`) and strengths (`*_strength`) range
 
 ---
 
-## 2. Simple style [planned]
+## 2. Simple style
+
+Put high-level controls inside `simple`. Raw renderer fields stay at the top level.
+Only `name` and `simple` are required; the default font is bundled Titan One, size 90,
+with Latin/Polish letters, digits and common punctuation.
 
 ```json
 {
   "name": "treasure_gold",
   "font": "Titan One",
-  "base_color": "#F5B845",
-  "outline": "dark",
-  "outline_width": "medium",
-  "depth_3d": 0.6,
-  "shadow": "soft",
-  "shine": 0.4,
-  "glow": null,
-  "width": 0.78,
-  "weight": 0,
-  "playful": 0.3,
-  "spacing": -5
+  "simple": {
+    "base_color": "#F5B845",
+    "outline": "dark",
+    "outline_width": "medium",
+    "depth_3d": 0.6,
+    "shadow": "soft",
+    "shine": 0.4,
+    "glow": null,
+    "width": 0.78,
+    "weight": 0,
+    "playful": 0.3,
+    "spacing": -5
+  },
+  "outline": { "width": 5 }
 }
 ```
 
-| Parameter | Type / range | Default | What it does | Expands into |
-|---|---|---|---|---|
-| `font` | name or path | `"Titan One"` | base typeface | `font`, `variation` |
-| `base_color` | hex or palette name | `"gold"` | main letter color; the rest of the palette is derived automatically | `fill.stops`, `side.*`, `bevel.*_color` |
-| `palette` | palette name | – | a ready-made palette instead of `base_color` (see section 4) | as above |
-| `outline` | `"dark"`, `"light"`, `"none"`, hex | `"dark"` | outline color; `dark` = a dark shade of `base_color` | `outline.color` |
-| `outline_width` | `"thin"`, `"medium"`, `"thick"` or px | `"medium"` | outline thickness (thin=2.5, medium=4, thick=6 px at size 100) | `outline.width` |
-| `depth_3d` | 0–1 | 0.5 | thickness of the 3D side (0 = flat, 1 ≈ 10 px) | `side.depth`, `side.dx` |
-| `shadow` | `"none"`, `"soft"`, `"hard"`, `"long"` | `"soft"` | shadow character | `shadow.*` |
-| `shine` | 0–1 | 0.4 | shine and embossing ("candy" look) | `bevel.*_strength`, `gloss.opacity` |
-| `glow` | `null` or hex | `null` | glow around the letters | `shadow` with `dy=0`, large `blur`, and the color |
-| `width` | 0.6–1.2 | 1.0 | condense / widen letters | `condense` |
-| `weight` | −3 to 6 px | 0 | thicken (or thin) the strokes | `embolden` / `wght` axis |
-| `playful` | 0–1 | 0 | "bouncy" letters (rotation and vertical offset) | `jitter.rotate`, `jitter.y` |
-| `spacing` | px | 0 | letter spacing (negative = tighter) | `tracking` |
+The top-level outline width overrides the generated width while retaining its color.
+Objects merge recursively; arrays, scalars and `null` replace generated values.
+Explicit `enabled` fields also override generated on/off states. Raw-only styles
+are preserved. Expansion is deterministic and never rewrites the source file.
 
-### How the palette is derived from `base_color`
+| Field inside `simple` | Type / range | Default | Result |
+|---|---|---|---|
+| `base_color` | `#RRGGBB` | unset | custom palette; wins over `palette` when both are supplied |
+| `palette` | gold, cream, candy, mint, ice, fire, magic, wood, silver | gold | fixed fill, side and outline colors |
+| `outline` | dark / light / none / hex | dark | derived outline color; none sets width to zero |
+| `outline_width` | thin / medium / thick or 0–40 px | medium | tokens are 2.5/4/6 px at size 100, scaled with size; numbers are final pixels |
+| `depth_3d` | 0–1 | 0.5 | side depth up to 10 px at size 100, scaled with size and capped at 40 px |
+| `shadow` | none / soft / hard / long | soft | shadow configuration |
+| `shine` | 0–1 | 0.4 | bevel lighting and gloss; zero disables both |
+| `glow` | null / hex | null | replaces the shadow with a centered glow, including when shadow is none |
+| `width` | 0.5–1.5 | 1 | `condense` |
+| `weight` | 0–6 px | 0 | `embolden`; font axes remain configurable through top-level `variation` |
+| `playful` | 0–1 | 0 | deterministic rotation and vertical jitter |
+| `spacing` | −512–512 px | 0 | `tracking` |
 
-From a single base color (in OKLCH space, so lightness stays even across hues):
+For custom colors, fill stops mix the base with white by 70%, 30%, and 0%.
+Side colors mix it with black by 20% and 50%; the dark outline uses 80% black.
+These are direct sRGB channel mixes, not perceptually uniform color-space conversions.
+Named palettes retain their exact listed colors, including the five silver gradient stops.
 
-| Element | Derivation |
-|---|---|
-| fill – top | lightness +30%, chroma −40% (creamy highlight) |
-| fill – middle | lightness +12% |
-| fill – bottom | `base_color` |
-| 3D side – top | lightness −12%, hue shifted −8° (warmer) |
-| 3D side – bottom | lightness −30% |
-| `dark` outline | lightness ≈ 20%, chroma preserved |
-| bevel – light | near-white tinted with the base hue |
-| bevel – shadow | lightness −8% |
+Bundled font aliases: `Titan One`, `Grandstander`, `Baloo 2`, `Dosis`, `Chewy`, `Sniglet`.
+They resolve to bundled font files; any other `font` value remains a normal path.
+`size`, `chars`, `preview`, `variation`, `title` and export options stay top-level.
+
+```bash
+glyfetti build examples/simple-mint.json --preview-only
+glyfetti title examples/simple-mint.json --text "Victory!" -o victory.png
+glyfetti expand examples/simple-mint.json -o expanded.json
+```
+
+`expand` emits a validated raw style and resolves its font to an absolute local path;
+without `-o` it writes JSON to stdout. It resolves the font without applying diacritic
+patches; patching remains a build-time operation. The editor's color builder and raw
+JSON panel accept compact styles and convert them to editable raw settings. Editor
+style downloads and atlas ZIPs contain the expanded form. Source compact files remain
+unchanged. Update absolute font paths when moving expanded styles to another computer.
 
 ---
 
@@ -219,7 +236,7 @@ repeated letters can give this away, so set `"jitter": null` for descriptions an
 
 Used by chat assistants (MCP) and as a cheat sheet for people.
 
-| When the user says… | Set |
+| When the user says… | Set inside `simple` unless otherwise indicated |
 |---|---|
 | golden, honey | palette `gold` or `base_color: #F5B845` |
 | cream, vanilla | palette `cream` |
@@ -233,14 +250,14 @@ Used by chat assistants (MCP) and as a cheat sheet for people.
 | matte | `shine` 0–0.2 |
 | narrow, slim, condensed | `width` 0.75–0.85 |
 | thick, heavy, bold | `weight` 2–4 |
-| delicate, thin | `weight` −1 to −2, `outline_width: "thin"` |
+| delicate, thin | `weight` 0, `outline_width: "thin"` |
 | fun, hand-drawn, fairy-tale | `playful` 0.3–0.5, font Grandstander or Chewy |
 | serious, elegant | `playful: 0`, font Baloo 2 or Dosis |
 | tight, merged letters | `spacing` −4 to −8 |
 | for a button | `outline: "dark"`, `depth_3d` 0.3, white fill |
 | for small UI text | preset `flat_ui`, `jitter: null`, no bevel |
 
-### Named palettes [planned]
+### Named palettes
 
 | Palette | Fill (top → bottom) | 3D side | Outline |
 |---|---|---|---|

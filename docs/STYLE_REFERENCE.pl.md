@@ -2,8 +2,7 @@
 
 🌐 [English](STYLE_REFERENCE.md) | **Polski**
 
-> Wersja dokumentu: 0.1-draft. Sekcje oznaczone **[planowane]** opisują warstwę prostą, która zostanie
-> wdrożona w wersji 0.1. Wszystko pozostałe odpowiada obecnej wersji (`glyfetti build`).
+> Wersja dokumentu: 0.1.4. Styl prosty i surowy działają z atlasem oraz eksportem całego napisu do PNG.
 
 Styl to jeden plik JSON. Glyfetti renderuje każdy znak fontu przez ten sam stos warstw
 i zapisuje atlas PNG + metryki (BMFont `.fnt`, JSON dla Unity/TMP) + podgląd.
@@ -12,7 +11,7 @@ Styl można pisać na dwóch poziomach:
 
 | Poziom | Dla kogo | Liczba parametrów |
 |---|---|---|
-| **Prosty** [planowane] | ludzie, czat przez MCP, suwaki w web UI | ok. 12 „pokręteł” |
+| **Prosty** | ludzie, czat przez MCP, suwaki w web UI | ok. 12 „pokręteł” |
 | **Surowy** | precyzyjne dopieszczanie, pełna kontrola | wszystkie warstwy osobno |
 
 Styl prosty jest automatycznie rozwijany w surowy. Jeśli w pliku są oba poziomy,
@@ -41,56 +40,74 @@ Kolory to zapis HEX `#RRGGBB`. Krycie (`opacity`) i siły (`*_strength`) mają z
 
 ---
 
-## 2. Styl prosty [planowane]
+## 2. Styl prosty
+
+Ustawienia wysokiego poziomu umieść w sekcji `simple`. Parametry surowego renderera
+pozostają na najwyższym poziomie. Wymagane są tylko `name` i `simple`; domyślny font
+to dołączony Titan One, rozmiar 90, ze znakami łacińskimi, polskimi, cyframi i interpunkcją.
 
 ```json
 {
   "name": "treasure_gold",
   "font": "Titan One",
-  "base_color": "#F5B845",
-  "outline": "dark",
-  "outline_width": "medium",
-  "depth_3d": 0.6,
-  "shadow": "soft",
-  "shine": 0.4,
-  "glow": null,
-  "width": 0.78,
-  "weight": 0,
-  "playful": 0.3,
-  "spacing": -5
+  "simple": {
+    "base_color": "#F5B845",
+    "outline": "dark",
+    "outline_width": "medium",
+    "depth_3d": 0.6,
+    "shadow": "soft",
+    "shine": 0.4,
+    "glow": null,
+    "width": 0.78,
+    "weight": 0,
+    "playful": 0.3,
+    "spacing": -5
+  },
+  "outline": { "width": 5 }
 }
 ```
 
-| Parametr | Typ / zakres | Domyślnie | Co robi | Rozwija się w |
-|---|---|---|---|---|
-| `font` | nazwa lub ścieżka | `"Titan One"` | krój bazowy | `font`, `variation` |
-| `base_color` | HEX lub nazwa palety | `"gold"` | główny kolor liter; reszta palety liczona automatycznie | `fill.stops`, `side.*`, `bevel.*_color` |
-| `palette` | nazwa palety | – | gotowa paleta zamiast `base_color` (patrz sekcja 4) | jw. |
-| `outline` | `"dark"`, `"light"`, `"none"`, HEX | `"dark"` | kolor obrysu; `dark` = ciemny odcień `base_color` | `outline.color` |
-| `outline_width` | `"thin"`, `"medium"`, `"thick"` lub liczba px | `"medium"` | grubość obrysu (thin=2.5, medium=4, thick=6 px przy size 100) | `outline.width` |
-| `depth_3d` | 0–1 | 0.5 | grubość boku 3D (0 = płaskie, 1 ≈ 10 px) | `side.depth`, `side.dx` |
-| `shadow` | `"none"`, `"soft"`, `"hard"`, `"long"` | `"soft"` | charakter cienia | `shadow.*` |
-| `shine` | 0–1 | 0.4 | połysk i wypukłość („cukierkowość”) | `bevel.*_strength`, `gloss.opacity` |
-| `glow` | `null` lub HEX | `null` | poświata wokół liter | `shadow` z `dy=0`, dużym `blur` i kolorem |
-| `width` | 0.6–1.2 | 1.0 | zwężenie / poszerzenie liter | `condense` |
-| `weight` | -3 do 6 px | 0 | pogrubienie (lub odchudzenie) kreski | `embolden` / oś `wght` |
-| `playful` | 0–1 | 0 | „skakanie” liter (obrót i przesunięcie) | `jitter.rotate`, `jitter.y` |
-| `spacing` | px | 0 | odstęp między literami (ujemny = ciaśniej) | `tracking` |
+Szerokość obrysu na najwyższym poziomie nadpisuje wygenerowaną, zachowując kolor.
+Obiekty łączą się rekurencyjnie; tablice, wartości skalarne i `null` zastępują wartości
+wygenerowane. Jawne pola `enabled` również mają pierwszeństwo. Istniejące style surowe
+zachowują wartości. Rozwinięcie jest deterministyczne i nie nadpisuje pliku źródłowego.
 
-### Jak liczona jest paleta z `base_color`
+| Pole w `simple` | Typ / zakres | Domyślnie | Wynik |
+|---|---|---|---|
+| `base_color` | `#RRGGBB` | brak | własna paleta; ma pierwszeństwo przed `palette` |
+| `palette` | gold, cream, candy, mint, ice, fire, magic, wood, silver | gold | gotowe kolory wypełnienia, boku i obrysu |
+| `outline` | dark / light / none / HEX | dark | kolor obrysu; none zeruje szerokość |
+| `outline_width` | thin / medium / thick lub 0–40 px | medium | nazwy: 2.5/4/6 px dla size 100, skalowane z rozmiarem; liczby to piksele końcowe |
+| `depth_3d` | 0–1 | 0.5 | do 10 px dla size 100, skalowane z rozmiarem i ograniczone do 40 px |
+| `shadow` | none / soft / hard / long | soft | rodzaj cienia |
+| `shine` | 0–1 | 0.4 | oświetlenie bevel i połysk; zero wyłącza oba |
+| `glow` | null / HEX | null | zastępuje cień wyśrodkowaną poświatą, także gdy shadow to none |
+| `width` | 0.5–1.5 | 1 | `condense` |
+| `weight` | 0–6 px | 0 | `embolden`; osie fontu ustawia osobne pole `variation` |
+| `playful` | 0–1 | 0 | deterministyczny obrót i przesunięcie liter |
+| `spacing` | −512–512 px | 0 | `tracking` |
 
-Z jednego koloru bazowego (w przestrzeni OKLCH, żeby jasność była równa dla różnych barw):
+Dla własnego koloru gradient miesza kolor bazowy z bielą w proporcjach 70%, 30%, 0%.
+Bok jest mieszany z czernią w 20% i 50%, a ciemny obrys w 80%. Są to bezpośrednie
+mieszanki kanałów sRGB, bez konwersji do przestrzeni o równomiernej jasności percepcyjnej.
+Nazwane palety zachowują dokładne kolory z tabeli, w tym pięć punktów gradientu srebrnego.
 
-| Element | Wyliczenie |
-|---|---|
-| wypełnienie – góra | jasność +30%, nasycenie −40% (kremowy refleks) |
-| wypełnienie – środek | jasność +12% |
-| wypełnienie – dół | `base_color` |
-| bok 3D – góra | jasność −12%, odcień przesunięty o −8° (cieplej) |
-| bok 3D – dół | jasność −30% |
-| obrys `dark` | jasność ≈ 20%, nasycenie zachowane |
-| bevel – światło | prawie biały z odcieniem bazy |
-| bevel – cień | jasność −8% |
+Aliasy dołączonych fontów: `Titan One`, `Grandstander`, `Baloo 2`, `Dosis`, `Chewy`, `Sniglet`.
+Inna wartość `font` jest zwykłą ścieżką. Pola `size`, `chars`, `preview`, `variation`,
+`title` oraz opcje eksportu pozostają na najwyższym poziomie.
+
+```bash
+glyfetti build examples/simple-mint.json --preview-only
+glyfetti title examples/simple-mint.json --text "Victory!" -o victory.png
+glyfetti expand examples/simple-mint.json -o expanded.json
+```
+
+`expand` zapisuje zwalidowany styl surowy i zamienia ścieżkę fontu na bezwzględną;
+bez `-o` wypisuje JSON na standardowe wyjście. Nie poprawia fontu — składanie znaków
+pozostaje operacją wykonywaną podczas budowania. Kreator koloru i panel JSON w edytorze
+przyjmują styl prosty i rozwijają go do ustawień surowych. Zapis JSON i ZIP atlasu
+zawierają rozwiniętą postać. Pliki źródłowe pozostają bez zmian. Po przeniesieniu stylu
+rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fontu.
 
 ---
 
@@ -219,7 +236,7 @@ powtarzające się litery mogą to zdradzać, więc do opisów i liczb ustaw `"j
 
 Używany przez czat (MCP) i jako ściągawka dla ludzi.
 
-| Gdy użytkownik mówi… | Ustaw |
+| Gdy użytkownik mówi… | Ustaw w `simple`, chyba że zaznaczono inaczej |
 |---|---|
 | złote, miodowe | paleta `gold` lub `base_color: #F5B845` |
 | kremowe, waniliowe | paleta `cream` |
@@ -233,14 +250,14 @@ Używany przez czat (MCP) i jako ściągawka dla ludzi.
 | matowe | `shine` 0–0.2 |
 | wąskie, smukłe, condensed | `width` 0.75–0.85 |
 | grube, ciężkie, bold | `weight` 2–4 |
-| delikatne, cienkie | `weight` −1 do −2, `outline_width: "thin"` |
+| delikatne, cienkie | `weight` 0, `outline_width: "thin"` |
 | zabawne, ręczne, bajkowe | `playful` 0.3–0.5, font Grandstander lub Chewy |
 | poważne, eleganckie | `playful: 0`, font Baloo 2 lub Dosis |
 | ciasno, zlane litery | `spacing` −4 do −8 |
 | do przycisku | `outline: "dark"`, `depth_3d` 0.3, białe wypełnienie |
 | do drobnego tekstu UI | preset `flat_ui`, `jitter: null`, bez bevela |
 
-### Nazwane palety [planowane]
+### Nazwane palety
 
 | Paleta | Wypełnienie (góra → dół) | Bok 3D | Obrys |
 |---|---|---|---|

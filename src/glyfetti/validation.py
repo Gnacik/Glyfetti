@@ -12,12 +12,16 @@ DATA_DIR = ROOT if (ROOT / 'schema/style.schema.json').is_file() else Path(__fil
 
 
 def validate_style(style):
+    """Accept either source format and return an independent normalized raw style."""
     schema = json.loads((DATA_DIR / 'schema/style.schema.json').read_text('utf-8'))
-    errors = sorted(Draft202012Validator(schema).iter_errors(style), key=lambda e: str(list(e.path)))
-    if errors:
-        error = errors[0]
-        field = '.'.join(map(str, error.path)) or 'style'
-        raise ValueError(f'{field}: {error.message}')
+    raw_schema = schema['$defs']['raw']
+
+    def check(definition, value, prefix=''):
+        errors = sorted(Draft202012Validator(definition).iter_errors(value), key=lambda e: str(list(e.path)))
+        if errors:
+            error = errors[0]
+            field = '.'.join(filter(None, [prefix, *map(str, error.path)])) or 'style'
+            raise ValueError(f'{field}: {error.message}')
 
     def finite(value, path='style'):
         if isinstance(value, float) and not math.isfinite(value):
@@ -30,6 +34,14 @@ def validate_style(style):
                 finite(item, f'{path}.{index}')
 
     finite(style)
+    if isinstance(style, dict) and 'simple' in style:
+        from .simple import expand_simple
+        check(schema['$defs']['simple']['properties']['simple'], style['simple'], 'simple')
+        globals_schema = {key: definition for key, definition in raw_schema['properties'].items()
+                          if key not in ('fill', 'outline', 'side', 'bevel', 'gloss', 'shadow', 'extrude')}
+        check({'type': 'object', 'properties': globals_schema}, style)
+        style = expand_simple(style)
+    check(raw_schema, style)
     positions = [stop[0] for stop in style['fill']['stops']]
     if positions != sorted(positions) or len(set(positions)) != len(positions):
         raise ValueError('fill.stops: positions must be strictly increasing')

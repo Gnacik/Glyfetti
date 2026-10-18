@@ -1,564 +1,905 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Gnacik/glyfetti/schema/style.schema.json",
-  "title": "Glyfetti style (raw level)",
+  "title": "Glyfetti style (simple or raw)",
   "description": "Styled bitmap font atlas definition. See docs/STYLE_REFERENCE.md.",
-  "type": "object",
-  "required": [
-    "name",
-    "font",
-    "size",
-    "chars",
-    "fill",
-    "outline"
+  "oneOf": [
+    {
+      "$ref": "#/$defs/raw"
+    },
+    {
+      "$ref": "#/$defs/simple"
+    }
   ],
-  "properties": {
-    "$schema": {
-      "type": "string"
-    },
-    "name": {
-      "type": "string",
-      "description": "Style name and output file name.",
-      "minLength": 1,
-      "maxLength": 100,
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
-    },
-    "description": {
-      "type": "string"
-    },
-    "order": {
-      "type": "integer",
-      "description": "Position in the gallery."
-    },
-    "font": {
-      "type": "string",
-      "description": "TTF/OTF path, relative to the style file.",
-      "minLength": 1
-    },
-    "font_label": {
-      "type": "string",
-      "description": "Human-readable font name for galleries."
-    },
-    "variation": {
-      "oneOf": [
-        {
+  "$defs": {
+    "raw": {
+      "type": "object",
+      "required": [
+        "name",
+        "font",
+        "size",
+        "chars",
+        "fill",
+        "outline"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Style name and output file name.",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Position in the gallery."
+        },
+        "font": {
+          "type": "string",
+          "description": "TTF/OTF path, relative to the style file.",
+          "minLength": 1
+        },
+        "font_label": {
+          "type": "string",
+          "description": "Human-readable font name for galleries."
+        },
+        "variation": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          ],
+          "description": "Variable font axes, e.g. {\"wght\": 800}."
+        },
+        "auto_diacritics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Compose missing Polish letters from accents in the font."
+        },
+        "size": {
+          "type": "integer",
+          "description": "Font size in the atlas (px).",
+          "minimum": 8,
+          "maximum": 512
+        },
+        "supersample": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 3
+        },
+        "chars": {
+          "type": "string",
+          "description": "Characters to include.",
+          "minLength": 1,
+          "maxLength": 10000
+        },
+        "atlas_width": {
+          "type": "integer",
+          "default": 1024,
+          "minimum": 8,
+          "maximum": 8192
+        },
+        "tracking": {
+          "type": "number",
+          "description": "Extra letter spacing (px); negative merges outlines.",
+          "minimum": -512,
+          "maximum": 512
+        },
+        "line_height": {
+          "type": "number",
+          "description": "Line height multiplier.",
+          "minimum": 0.5,
+          "maximum": 3
+        },
+        "condense": {
+          "type": "number",
+          "description": "Horizontal glyph scale.",
+          "minimum": 0.5,
+          "maximum": 1.5
+        },
+        "embolden": {
+          "type": "number",
+          "description": "Stroke thickening before effects (px).",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "preview": {
           "type": "array",
           "items": {
-            "type": "number"
-          }
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^[^\\r\\n]*$"
+          },
+          "minItems": 1,
+          "maxItems": 20
         },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "number"
-          }
-        }
-      ],
-      "description": "Variable font axes, e.g. {\"wght\": 800}."
-    },
-    "auto_diacritics": {
-      "type": "boolean",
-      "default": true,
-      "description": "Compose missing Polish letters from accents in the font."
-    },
-    "size": {
-      "type": "integer",
-      "description": "Font size in the atlas (px).",
-      "minimum": 8,
-      "maximum": 512
-    },
-    "supersample": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 4,
-      "default": 3
-    },
-    "chars": {
-      "type": "string",
-      "description": "Characters to include.",
-      "minLength": 1,
-      "maxLength": 10000
-    },
-    "atlas_width": {
-      "type": "integer",
-      "default": 1024,
-      "minimum": 8,
-      "maximum": 8192
-    },
-    "tracking": {
-      "type": "number",
-      "description": "Extra letter spacing (px); negative merges outlines.",
-      "minimum": -512,
-      "maximum": 512
-    },
-    "line_height": {
-      "type": "number",
-      "description": "Line height multiplier.",
-      "minimum": 0.5,
-      "maximum": 3
-    },
-    "condense": {
-      "type": "number",
-      "description": "Horizontal glyph scale.",
-      "minimum": 0.5,
-      "maximum": 1.5
-    },
-    "embolden": {
-      "type": "number",
-      "description": "Stroke thickening before effects (px).",
-      "minimum": 0,
-      "maximum": 20
-    },
-    "preview": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "maxLength": 2000,
-        "pattern": "^[^\\r\\n]*$"
-      },
-      "minItems": 1,
-      "maxItems": 20
-    },
-    "preview_bg": {
-      "type": "string",
-      "description": "#RRGGBB or 'transparent'.",
-      "pattern": "^(#[0-9A-Fa-f]{6}|transparent)$"
-    },
-    "jitter": {
-      "oneOf": [
-        {
-          "type": "null"
+        "preview_bg": {
+          "type": "string",
+          "description": "#RRGGBB or 'transparent'.",
+          "pattern": "^(#[0-9A-Fa-f]{6}|transparent)$"
         },
-        {
+        "jitter": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "rotate": {
+                  "type": "number",
+                  "description": "Max rotation (deg).",
+                  "minimum": 0,
+                  "maximum": 45
+                },
+                "y": {
+                  "type": "number",
+                  "description": "Max vertical offset (px).",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "seed": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "fill": {
           "type": "object",
+          "required": [
+            "stops"
+          ],
           "properties": {
-            "rotate": {
-              "type": "number",
-              "description": "Max rotation (deg).",
-              "minimum": 0,
-              "maximum": 45
+            "stops": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  }
+                ],
+                "minItems": 2,
+                "maxItems": 2
+              }
             },
-            "y": {
-              "type": "number",
-              "description": "Max vertical offset (px).",
-              "minimum": 0,
-              "maximum": 100
-            },
-            "seed": {
-              "type": "integer"
+            "gradient_space": {
+              "enum": [
+                "glyph",
+                "line"
+              ],
+              "default": "glyph"
             }
           },
           "additionalProperties": false
-        }
-      ]
-    },
-    "fill": {
-      "type": "object",
-      "required": [
-        "stops"
-      ],
-      "properties": {
-        "stops": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "array",
-            "prefixItems": [
-              {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 1
-              },
-              {
-                "type": "string",
-                "pattern": "^#[0-9A-Fa-f]{6}$"
-              }
-            ],
-            "minItems": 2,
-            "maxItems": 2
-          }
         },
-        "gradient_space": {
-          "enum": [
-            "glyph",
-            "line"
+        "outline": {
+          "type": "object",
+          "required": [
+            "color",
+            "width"
           ],
-          "default": "glyph"
-        }
-      },
-      "additionalProperties": false
-    },
-    "outline": {
-      "type": "object",
-      "required": [
-        "color",
-        "width"
-      ],
-      "properties": {
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
+          "properties": {
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "width": {
+              "type": "number",
+              "description": "Outline width (px).",
+              "minimum": 0,
+              "maximum": 40
+            }
+          },
+          "additionalProperties": false
         },
-        "width": {
-          "type": "number",
-          "description": "Outline width (px).",
-          "minimum": 0,
-          "maximum": 40
-        }
-      },
-      "additionalProperties": false
-    },
-    "side": {
-      "type": "object",
-      "properties": {
-        "enabled": {
+        "side": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "depth": {
+              "type": "number",
+              "description": "3D side depth (px).",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "dx": {
+              "type": "number",
+              "description": "Horizontal skew of the side (px).",
+              "minimum": -512,
+              "maximum": 512
+            },
+            "color_top": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "color_bottom": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {},
+              "else": {
+                "required": [
+                  "depth",
+                  "color_top",
+                  "color_bottom"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false
+        },
+        "bevel": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "size": {
+              "type": "number",
+              "description": "Bevel width (px).",
+              "minimum": 0,
+              "maximum": 40,
+              "exclusiveMinimum": 0
+            },
+            "soften": {
+              "type": "number",
+              "description": "Height map smoothing (px).",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "light_angle": {
+              "type": "number",
+              "description": "Light direction in degrees, 90 = from top."
+            },
+            "highlight_color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "highlight_strength": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "shadow_color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "shadow_strength": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {},
+              "else": {
+                "required": [
+                  "size",
+                  "light_angle",
+                  "highlight_color",
+                  "highlight_strength",
+                  "shadow_color",
+                  "shadow_strength"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false
+        },
+        "gloss": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "opacity": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "inset": {
+              "type": "number",
+              "description": "Inset from edge (px).",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "height": {
+              "type": "number",
+              "description": "Covered fraction from top.",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blur": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {},
+              "else": {
+                "required": [
+                  "color",
+                  "opacity",
+                  "inset",
+                  "height",
+                  "blur"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false
+        },
+        "shadow": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "opacity": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "dx": {
+              "type": "number",
+              "description": "Offset X (px).",
+              "minimum": -512,
+              "maximum": 512
+            },
+            "dy": {
+              "type": "number",
+              "description": "Offset Y (px).",
+              "minimum": -512,
+              "maximum": 512
+            },
+            "blur": {
+              "type": "number",
+              "description": "Blur (px). dx=dy=0 + large blur = glow.",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {},
+              "else": {
+                "required": [
+                  "color",
+                  "opacity",
+                  "dx",
+                  "dy"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false
+        },
+        "extrude": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "depth": {
+              "type": "number",
+              "description": "Offset of the base outside the outline (px).",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "opacity": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blur": {
+              "type": "number",
+              "description": "",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {},
+              "else": {
+                "required": [
+                  "color",
+                  "depth"
+                ]
+              }
+            }
+          ],
+          "additionalProperties": false
+        },
+        "max_atlas_size": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 8192,
+          "default": 8192,
+          "description": "Maximum atlas width and height; oversized builds fail without cropping."
+        },
+        "kerning": {
           "type": "boolean",
           "default": true,
-          "description": "Set false to disable the layer."
+          "description": "Export horizontal pair kerning and apply it to previews."
         },
-        "depth": {
-          "type": "number",
-          "description": "3D side depth (px).",
-          "minimum": 0,
-          "maximum": 40
-        },
-        "dx": {
-          "type": "number",
-          "description": "Horizontal skew of the side (px).",
-          "minimum": -512,
-          "maximum": 512
-        },
-        "color_top": {
+        "kerning_script": {
           "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
+          "pattern": "^[A-Za-z0-9 ]{4}$",
+          "default": "latn",
+          "description": "OpenType script for the default language kern feature; falls back to DFLT."
         },
-        "color_bottom": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "enabled": {
-                "const": false
-              }
+        "atlas_packing": {
+          "enum": [
+            "maxrects",
+            "shelf"
+          ],
+          "default": "maxrects",
+          "description": "Atlas packing without glyph rotation. MaxRects falls back to shelf if smaller."
+        },
+        "title": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "align": {
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ],
+              "default": "center"
             },
-            "required": [
-              "enabled"
-            ]
-          },
-          "then": {},
-          "else": {
-            "required": [
-              "depth",
-              "color_top",
-              "color_bottom"
-            ]
+            "padding": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200,
+              "default": 8
+            }
           }
         }
-      ],
+      },
       "additionalProperties": false
     },
-    "bevel": {
+    "simple": {
       "type": "object",
+      "required": [
+        "name",
+        "simple"
+      ],
       "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Set false to disable the layer."
+        "$schema": {
+          "$ref": "#/$defs/raw/properties/$schema"
+        },
+        "name": {
+          "$ref": "#/$defs/raw/properties/name"
+        },
+        "description": {
+          "$ref": "#/$defs/raw/properties/description"
+        },
+        "order": {
+          "$ref": "#/$defs/raw/properties/order"
+        },
+        "font": {
+          "$ref": "#/$defs/raw/properties/font"
+        },
+        "font_label": {
+          "$ref": "#/$defs/raw/properties/font_label"
+        },
+        "variation": {
+          "$ref": "#/$defs/raw/properties/variation"
+        },
+        "auto_diacritics": {
+          "$ref": "#/$defs/raw/properties/auto_diacritics"
         },
         "size": {
-          "type": "number",
-          "description": "Bevel width (px).",
-          "minimum": 0,
-          "maximum": 40,
-          "exclusiveMinimum": 0
+          "$ref": "#/$defs/raw/properties/size"
         },
-        "soften": {
-          "type": "number",
-          "description": "Height map smoothing (px).",
-          "minimum": 0,
-          "maximum": 40
+        "supersample": {
+          "$ref": "#/$defs/raw/properties/supersample"
         },
-        "light_angle": {
-          "type": "number",
-          "description": "Light direction in degrees, 90 = from top."
+        "chars": {
+          "$ref": "#/$defs/raw/properties/chars"
         },
-        "highlight_color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
+        "atlas_width": {
+          "$ref": "#/$defs/raw/properties/atlas_width"
         },
-        "highlight_strength": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 1
+        "tracking": {
+          "$ref": "#/$defs/raw/properties/tracking"
         },
-        "shadow_color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
+        "line_height": {
+          "$ref": "#/$defs/raw/properties/line_height"
         },
-        "shadow_strength": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 1
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "enabled": {
-                "const": false
-              }
+        "condense": {
+          "$ref": "#/$defs/raw/properties/condense"
+        },
+        "embolden": {
+          "$ref": "#/$defs/raw/properties/embolden"
+        },
+        "preview": {
+          "$ref": "#/$defs/raw/properties/preview"
+        },
+        "preview_bg": {
+          "$ref": "#/$defs/raw/properties/preview_bg"
+        },
+        "jitter": {
+          "$ref": "#/$defs/raw/properties/jitter"
+        },
+        "fill": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "stops": {
+              "$ref": "#/$defs/raw/properties/fill/properties/stops"
             },
-            "required": [
-              "enabled"
-            ]
-          },
-          "then": {},
-          "else": {
-            "required": [
-              "size",
-              "light_angle",
-              "highlight_color",
-              "highlight_strength",
-              "shadow_color",
-              "shadow_strength"
-            ]
+            "gradient_space": {
+              "$ref": "#/$defs/raw/properties/fill/properties/gradient_space"
+            }
+          }
+        },
+        "outline": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "$ref": "#/$defs/raw/properties/outline/properties/color"
+            },
+            "width": {
+              "$ref": "#/$defs/raw/properties/outline/properties/width"
+            }
+          }
+        },
+        "side": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/raw/properties/side/properties/enabled"
+            },
+            "depth": {
+              "$ref": "#/$defs/raw/properties/side/properties/depth"
+            },
+            "dx": {
+              "$ref": "#/$defs/raw/properties/side/properties/dx"
+            },
+            "color_top": {
+              "$ref": "#/$defs/raw/properties/side/properties/color_top"
+            },
+            "color_bottom": {
+              "$ref": "#/$defs/raw/properties/side/properties/color_bottom"
+            }
+          }
+        },
+        "bevel": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/enabled"
+            },
+            "size": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/size"
+            },
+            "soften": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/soften"
+            },
+            "light_angle": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/light_angle"
+            },
+            "highlight_color": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/highlight_color"
+            },
+            "highlight_strength": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/highlight_strength"
+            },
+            "shadow_color": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/shadow_color"
+            },
+            "shadow_strength": {
+              "$ref": "#/$defs/raw/properties/bevel/properties/shadow_strength"
+            }
+          }
+        },
+        "gloss": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/enabled"
+            },
+            "color": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/color"
+            },
+            "opacity": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/opacity"
+            },
+            "inset": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/inset"
+            },
+            "height": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/height"
+            },
+            "blur": {
+              "$ref": "#/$defs/raw/properties/gloss/properties/blur"
+            }
+          }
+        },
+        "shadow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/enabled"
+            },
+            "color": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/color"
+            },
+            "opacity": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/opacity"
+            },
+            "dx": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/dx"
+            },
+            "dy": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/dy"
+            },
+            "blur": {
+              "$ref": "#/$defs/raw/properties/shadow/properties/blur"
+            }
+          }
+        },
+        "extrude": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/raw/properties/extrude/properties/enabled"
+            },
+            "color": {
+              "$ref": "#/$defs/raw/properties/extrude/properties/color"
+            },
+            "depth": {
+              "$ref": "#/$defs/raw/properties/extrude/properties/depth"
+            },
+            "opacity": {
+              "$ref": "#/$defs/raw/properties/extrude/properties/opacity"
+            },
+            "blur": {
+              "$ref": "#/$defs/raw/properties/extrude/properties/blur"
+            }
+          }
+        },
+        "max_atlas_size": {
+          "$ref": "#/$defs/raw/properties/max_atlas_size"
+        },
+        "kerning": {
+          "$ref": "#/$defs/raw/properties/kerning"
+        },
+        "kerning_script": {
+          "$ref": "#/$defs/raw/properties/kerning_script"
+        },
+        "atlas_packing": {
+          "$ref": "#/$defs/raw/properties/atlas_packing"
+        },
+        "title": {
+          "$ref": "#/$defs/raw/properties/title"
+        },
+        "simple": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "palette": {
+              "enum": [
+                "gold",
+                "cream",
+                "candy",
+                "mint",
+                "ice",
+                "fire",
+                "magic",
+                "wood",
+                "silver"
+              ]
+            },
+            "base_color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "outline": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "dark",
+                    "light",
+                    "none"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                }
+              ]
+            },
+            "outline_width": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "thin",
+                    "medium",
+                    "thick"
+                  ]
+                },
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 40
+                }
+              ]
+            },
+            "depth_3d": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "shine": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "shadow": {
+              "enum": [
+                "none",
+                "soft",
+                "hard",
+                "long"
+              ]
+            },
+            "glow": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                }
+              ]
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.5
+            },
+            "weight": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "playful": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "spacing": {
+              "type": "number",
+              "minimum": -512,
+              "maximum": 512
+            }
           }
         }
-      ],
-      "additionalProperties": false
-    },
-    "gloss": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Set false to disable the layer."
-        },
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
-        },
-        "opacity": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "inset": {
-          "type": "number",
-          "description": "Inset from edge (px).",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "height": {
-          "type": "number",
-          "description": "Covered fraction from top.",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "blur": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 100
-        }
       },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "enabled": {
-                "const": false
-              }
-            },
-            "required": [
-              "enabled"
-            ]
-          },
-          "then": {},
-          "else": {
-            "required": [
-              "color",
-              "opacity",
-              "inset",
-              "height",
-              "blur"
-            ]
-          }
-        }
-      ],
       "additionalProperties": false
-    },
-    "shadow": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Set false to disable the layer."
-        },
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
-        },
-        "opacity": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "dx": {
-          "type": "number",
-          "description": "Offset X (px).",
-          "minimum": -512,
-          "maximum": 512
-        },
-        "dy": {
-          "type": "number",
-          "description": "Offset Y (px).",
-          "minimum": -512,
-          "maximum": 512
-        },
-        "blur": {
-          "type": "number",
-          "description": "Blur (px). dx=dy=0 + large blur = glow.",
-          "minimum": 0,
-          "maximum": 100
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "enabled": {
-                "const": false
-              }
-            },
-            "required": [
-              "enabled"
-            ]
-          },
-          "then": {},
-          "else": {
-            "required": [
-              "color",
-              "opacity",
-              "dx",
-              "dy"
-            ]
-          }
-        }
-      ],
-      "additionalProperties": false
-    },
-    "extrude": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Set false to disable the layer."
-        },
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
-        },
-        "depth": {
-          "type": "number",
-          "description": "Offset of the base outside the outline (px).",
-          "minimum": 0,
-          "maximum": 100
-        },
-        "opacity": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 1
-        },
-        "blur": {
-          "type": "number",
-          "description": "",
-          "minimum": 0,
-          "maximum": 100
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "enabled": {
-                "const": false
-              }
-            },
-            "required": [
-              "enabled"
-            ]
-          },
-          "then": {},
-          "else": {
-            "required": [
-              "color",
-              "depth"
-            ]
-          }
-        }
-      ],
-      "additionalProperties": false
-    },
-    "max_atlas_size": {
-      "type": "integer",
-      "minimum": 8,
-      "maximum": 8192,
-      "default": 8192,
-      "description": "Maximum atlas width and height; oversized builds fail without cropping."
-    },
-    "kerning": {
-      "type": "boolean",
-      "default": true,
-      "description": "Export horizontal pair kerning and apply it to previews."
-    },
-    "kerning_script": {
-      "type": "string",
-      "pattern": "^[A-Za-z0-9 ]{4}$",
-      "default": "latn",
-      "description": "OpenType script for the default language kern feature; falls back to DFLT."
-    },
-    "atlas_packing": {
-      "enum": [
-        "maxrects",
-        "shelf"
-      ],
-      "default": "maxrects",
-      "description": "Atlas packing without glyph rotation. MaxRects falls back to shelf if smaller."
-    },
-    "title": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "align": {
-          "enum": [
-            "left",
-            "center",
-            "right"
-          ],
-          "default": "center"
-        },
-        "padding": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 200,
-          "default": 8
-        }
-      }
     }
-  },
-  "additionalProperties": false
+  }
 }

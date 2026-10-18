@@ -34,6 +34,10 @@ def main(argv=None):
     v = sub.add_parser('validate', help='validate style JSON without rendering')
     v.add_argument('style', nargs='+')
 
+    expanded = sub.add_parser('expand', help='expand a simple or mixed style into a validated raw JSON file')
+    expanded.add_argument('style')
+    expanded.add_argument('-o', '--out', help='output JSON; defaults to stdout')
+
     server = sub.add_parser('serve', help='open the local style editor with live preview')
     server.add_argument('--port', type=int, default=8765)
     server.add_argument('--no-browser', action='store_true')
@@ -50,6 +54,22 @@ def run(a):
     if a.cmd == 'serve':
         from .server import serve
         serve(port=a.port, open_browser=not a.no_browser)
+    elif a.cmd == 'expand':
+        import json
+        from .validation import validate_style
+        source = Path(a.style)
+        style = validate_style(json.loads(source.read_text('utf-8')))
+        # Expanded files can move away from the original style directory.
+        from .engine import resolve_font
+        font_path, _ = resolve_font(dict(style, auto_diacritics=False), source.parent)
+        style['font'] = str(font_path.resolve())
+        content = json.dumps(style, ensure_ascii=False, indent=2) + '\n'
+        if a.out:
+            target = Path(a.out)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, 'utf-8')
+        else:
+            print(content, end='')
     elif a.cmd == 'validate':
         import json
         from .validation import validate_style

@@ -18,6 +18,7 @@ function get(path) { return path.split('.').reduce((v, k) => v?.[k], style); }
 function set(path, value) { const keys = path.split('.'); let node = style; for (const k of keys.slice(0, -1)) node = node[k] ||= {}; node[keys.at(-1)] = value; }
 function message(text, error = false) { $('status').textContent = text; $('status').dataset.error = String(error); }
 function download(data, name) { const url = URL.createObjectURL(data), link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
+function numberLabel(value) { return Number(Number(value).toFixed(3)); }
 function sync() {
   $('title-align').value = style.title?.align || 'center'; $('title-padding').value = style.title?.padding ?? 8; syncMode();
   $('kerning').checked = style.kerning !== false; $('packing').value = style.atlas_packing || 'maxrects';
@@ -27,7 +28,7 @@ function sync() {
   $('sliders').replaceChildren();
   for (const [path, name, min, max, step, unit] of knobs) {
     const id = path.replace('.', '-'), label = document.createElement('label'), output = document.createElement('output'), input = document.createElement('input');
-    label.className = 'range-label'; label.htmlFor = id; label.textContent = name; output.textContent = `${get(path) ?? 0}${unit}`; label.append(output);
+    label.className = 'range-label'; label.htmlFor = id; label.textContent = name; output.textContent = `${numberLabel(get(path) ?? 0)}${unit}`; label.append(output);
     input.id = id; input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = get(path) ?? 0;
     input.addEventListener('input', () => {
       if (path === 'side.depth' && !style.side?.color_top) style.side = { depth: 0, dx: 1, color_top: style.fill.stops.at(-1)[1], color_bottom: style.outline.color };
@@ -83,8 +84,21 @@ $('export').addEventListener('click', async () => {
   finally { exporting = false; $('export').disabled = false; if (pending) preview(); }
 });
 $('apply-json').addEventListener('click', async () => {
-  try { const parsed = JSON.parse($('json').value); await request('validate', parsed); style = parsed; sync(); schedule(); }
+  try { const parsed = JSON.parse($('json').value); const response = await request('expand', parsed); style = (await response.json()).style; sync(); schedule(); }
   catch (error) { message(error.message, true); }
+});
+for (const key of ['depth', 'shine', 'playful']) $('simple-' + key).addEventListener('input', event => { $('simple-' + key + '-value').textContent = event.target.value; });
+$('simple-palette').addEventListener('change', () => { $('simple-color').disabled = $('simple-palette').value !== 'custom'; });
+$('apply-simple').addEventListener('click', async () => {
+  $('apply-simple').disabled = true;
+  const simple = { depth_3d: Number($('simple-depth').value), shine: Number($('simple-shine').value), playful: Number($('simple-playful').value) };
+  if ($('simple-palette').value === 'custom') simple.base_color = $('simple-color').value;
+  else simple.palette = $('simple-palette').value;
+  const draft = { name: 'custom_style', simple };
+  for (const key of ['font', 'size', 'chars', 'preview', 'preview_bg', 'variation', 'title', 'kerning', 'kerning_script', 'atlas_width', 'max_atlas_size', 'atlas_packing', 'supersample']) if (key in style) draft[key] = structuredClone(style[key]);
+  try { const response = await request('expand', draft); style = (await response.json()).style; sync(); schedule(); }
+  catch (error) { message(error.message, true); }
+  finally { $('apply-simple').disabled = false; }
 });
 (async () => {
   try {
@@ -92,6 +106,6 @@ $('apply-json').addEventListener('click', async () => {
     const catalog = await response.json(); presets = catalog.presets; token = catalog.token;
     presets.forEach((preset, index) => { const option = document.createElement('option'); option.value = index; option.textContent = preset.name.replaceAll('_', ' '); $('preset').append(option); });
     catalog.fonts.forEach(path => { const option = document.createElement('option'); option.value = path; option.textContent = path.split(/[\\/]/).at(-1).replace(/\.ttf$/i, ''); $('font').append(option); });
-    selectPreset(); $('export').disabled = false; $('save-style').disabled = false;
+    selectPreset(); $('export').disabled = false; $('save-style').disabled = false; $('apply-simple').disabled = false;
   } catch (error) { message(error.message, true); }
 })();

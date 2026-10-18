@@ -1,0 +1,11 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "custom_mint",
+  "simple": {
+    "base_color": "#53C7A4",
+    "depth_3d": 0.6,
+    "shine": 0.7,
+    "playful": 0.1
+  },
+  "preview": ["Glyfetti!", "Zażółć gęślą jaźń"]
+}

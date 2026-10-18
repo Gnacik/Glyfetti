@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.4a1
+
+- Add nested `simple` controls for custom colors, nine palettes, outline, 3D depth,
+  shine, shadow/glow, width, weight, playful jitter and spacing.
+- Derive raw styles deterministically, merge raw overrides recursively and resolve
+  six bundled font aliases while preserving existing raw styles.
+- Add `glyfetti expand`, a simple-style example and schema support for both formats.
+- Add an editor color/palette builder and compact JSON support; keep saved editor
+  styles expanded for further fine-tuning.
+- Test compact/raw image equivalence, defaults, palette and font selection, override
+  precedence, validation, CLI expansion and both export modes.
+
 ## 0.1.3a1
 
 - Add `glyfetti title`: merge letter masks before applying one shared effect stack,

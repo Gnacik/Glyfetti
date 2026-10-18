@@ -115,13 +115,15 @@ def make_server(port=8765):
         def do_POST(self):
             if not self.allowed() or not secrets.compare_digest(self.headers.get('X-Glyfetti-Token', ''), token):
                 return self.respond(403, {'error': 'Invalid editor session. Reload the page.'})
-            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate'):
+            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate', '/api/expand'):
                 return self.respond(404, {'error': 'Not found'})
             try:
                 length = int(self.headers.get('Content-Length', '0'))
                 if not 0 < length <= MAX_BODY:
                     return self.respond(413, {'error': 'Style JSON must be between 1 byte and 256 KiB.'})
                 style = json.loads(self.rfile.read(length))
+                if self.path == '/api/expand':
+                    return self.respond(200, {'style': validate_style(style)})
                 if self.path == '/api/validate':
                     validate_style(style)
                     return self.respond(200, {'valid': True})

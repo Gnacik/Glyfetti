@@ -16,7 +16,7 @@ Każdy styl to mały **plik JSON**: można go wersjonować, udostępniać, zaczy
 **asystenta AI**, żeby napisał go z opisu typu *„złote litery 3D z miękkim cieniem”*.
 
 > **Status: alpha (0.1).** Silnik, CLI, presety i eksport BMFont/JSON działają. Importer Unity jest
-> eksperymentalny. Warstwa prosta stylu i serwer MCP są w planach – patrz [plan rozwoju](#plan-rozwoju).
+> eksperymentalny. Warstwa prosta stylu jest dostępna; serwer MCP jest w planach – patrz [plan rozwoju](#plan-rozwoju).
 
 <p align="center">
   <img src="docs/images/before_after.png" alt="Zwykły font Titan One i styl honey_gold" width="100%">
@@ -71,6 +71,30 @@ glyfetti gallery presets -o gallery.png             # galeria wszystkich preset�
 | `honey_gold.fnt` | metryki BMFont |
 | `honey_gold.json` | metryki dla importera Unity |
 | `honey_gold_preview.png` | tekst złożony z atlasu (test metryk i wyglądu) |
+
+## Zacznij od koloru
+
+```json
+{
+  "name": "custom_mint",
+  "simple": { "base_color": "#53C7A4", "depth_3d": 0.6, "shine": 0.7, "playful": 0.1 },
+  "preview": ["Glyfetti!"]
+}
+```
+
+Sekcja `simple` wylicza gradient, obrys, bok 3D, bevel i cień. Wybierz `base_color`
+lub jedną z dziewięciu nazwanych palet. Font, rozmiar i zestaw znaków mają wartości
+domyślne. Parametry surowe na najwyższym poziomie nadpisują wygenerowane wartości
+rekurencyjnie, np. `"outline": {"width": 5}` zmienia samą szerokość obrysu.
+
+Uruchom `glyfetti build examples/simple-mint.json --preview-only` albo użyj tego
+pliku z `glyfetti title`. `glyfetti expand examples/simple-mint.json -o expanded.json`
+zapisze pełny JSON. W edytorze otwórz **Start from a color or palette**, wybierz kolor
+i efekty, następnie **Create style**. Panel JSON również przyjmuje format prosty.
+Zapis JSON z edytora zawiera rozwinięte ustawienia do dalszej edycji.
+Wszystkie opcje opisuje [dokumentacja](docs/STYLE_REFERENCE.pl.md#2-styl-prosty).
+
+![Tworzenie stylu z koloru lub palety](docs/images/simple-editor.png)
 
 ## Jak zbudowany jest styl
 
@@ -224,7 +248,7 @@ w grach komercyjnych.
 
 - [x] Silnik warstw, CLI, 12 presetów, eksport BMFont/JSON, automatyczne polskie znaki, JSON Schema
 - [x] Importer Unity TextMeshPro + shader kolorowy (eksperymentalny)
-- [ ] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
+- [x] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
 - [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
 - [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
 - [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects

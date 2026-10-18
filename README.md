@@ -16,7 +16,7 @@ Every style is a small **JSON file**, so it can be versioned, shared, generated 
 by an **AI assistant** from a plain-language description like *"golden 3D letters with a soft shadow"*.
 
 > **Status: alpha (0.1).** The renderer, CLI, presets and BMFont/JSON export work today. The Unity importer is
-> experimental. The local web editor is available via `glyfetti serve`. The simple style layer and the MCP server are planned – see the [roadmap](#roadmap).
+> experimental. The local web editor is available via `glyfetti serve`. The simple style layer is available; the MCP server is planned – see the [roadmap](#roadmap).
 
 <p align="center">
   <img src="docs/images/before_after.png" alt="Plain Titan One font versus the honey_gold Glyfetti style" width="100%">
@@ -167,6 +167,30 @@ horizontal layout limitations; it does not provide contextual script shaping.
 
 ![Whole-title PNG with shared effects](docs/images/title.png)
 
+## Start with a color
+
+```json
+{
+  "name": "custom_mint",
+  "simple": { "base_color": "#53C7A4", "depth_3d": 0.6, "shine": 0.7, "playful": 0.1 },
+  "preview": ["Glyfetti!"]
+}
+```
+
+The `simple` section derives gradients, outline, side, bevel and shadow for you.
+Choose `base_color` or one of nine named palettes. Font, size and character set have
+working defaults. Top-level raw fields override generated values recursively, so
+`"outline": {"width": 5}` changes only the outline width.
+
+Try `glyfetti build examples/simple-mint.json --preview-only`, or use the same file
+with `glyfetti title`. `glyfetti expand examples/simple-mint.json -o expanded.json`
+produces the full raw JSON. In the editor, open **Start from a color or palette**,
+choose the color and finish, then **Create style**. The raw JSON panel also accepts
+compact styles. Saved editor styles contain the expanded settings for fine-tuning.
+See the [simple style reference](docs/STYLE_REFERENCE.md#2-simple-style) for all controls.
+
+![Create a style from a color or palette](docs/images/simple-editor.png)
+
 ## How a style is built
 
 <p align="center">
@@ -244,6 +268,8 @@ glyfetti title STYLE.json [--text "Level Complete!"] [--align left|center|right]
 
 glyfetti serve [--port 8765] [--no-browser]
 
+glyfetti expand STYLE.json [-o expanded.json]
+
 glyfetti validate STYLE.json [STYLE2.json …]
 
 glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only]
@@ -298,7 +324,7 @@ games. Check the license of any other font you use.
 
 - [x] Layered renderer, CLI, 12 presets, BMFont/JSON export, auto diacritics, JSON Schema
 - [x] Unity TextMeshPro importer + color shader (experimental)
-- [ ] **Simple style layer** – ~12 knobs (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…) expanded into a full style
+- [x] **Simple style layer** – ~12 knobs (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…) expanded into a full style
 - [ ] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
 - [x] `glyfetti serve` – local web UI with live preview and sliders
 - [x] Horizontal GPOS / legacy kerning, MaxRects atlas packing

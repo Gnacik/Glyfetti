@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 from PIL import Image, ImageDraw, ImageFont
 from .engine import build, FONTS_DIR
+from .validation import validate_style
 
 TW, TH, COLS, GAP = 900, 330, 2, 24
 
@@ -29,7 +30,7 @@ def make_gallery(preset_dir, out_png, title='Glyfetti presets',
     d.text((GAP, 22), title, fill='#2B2118', font=_font(58))
     d.text((GAP, 100), subtitle, fill='#6B5D4F', font=_font(26, 600))
     for i, sp in enumerate(styles):
-        st = json.loads(sp.read_text('utf-8'))
+        st = validate_style(json.loads(sp.read_text('utf-8')))
         x = GAP + (i % COLS) * (TW + GAP)
         y = 150 + (i // COLS) * (TH + 80 + GAP)
         background = st.get('preview_bg', '#ffffff')
