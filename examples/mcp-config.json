@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "glyfetti": {
+      "command": "/absolute/path/to/python",
+      "args": [
+        "-m",
+        "glyfetti.cli",
+        "mcp",
+        "--output-dir",
+        "/absolute/path/to/exports"
+      ]
+    }
+  }
+}

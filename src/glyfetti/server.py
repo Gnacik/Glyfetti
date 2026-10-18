@@ -42,7 +42,7 @@ def catalog():
             'fonts': [str(p.resolve()) for p in sorted(FONTS_DIR.glob('*.ttf'))]}
 
 
-def render_style(style, preview=False, mode='atlas'):
+def render_style(style, preview=False, mode='atlas', with_report=False):
     if mode not in ('atlas', 'title'):
         raise ValueError('output mode must be atlas or title')
     style = copy.deepcopy(validate_style(style))
@@ -58,7 +58,9 @@ def render_style(style, preview=False, mode='atlas'):
             from .title import build_title
             result = build_title(source, root / 'out' / f"{style['name']}_title.png")
             if not preview:
-                return result['out'].read_bytes()
+                data = result['out'].read_bytes()
+                report = {key: result[key] for key in ('size', 'glyphs', 'kernings', 'skipped', 'lines')}
+                return (data, report) if with_report else data
             image = result['preview'].read_bytes()
             return {'mode': 'title', 'image': 'data:image/png;base64,' + base64.b64encode(image).decode(),
                     **{key: result[key] for key in ('size', 'glyphs', 'kernings', 'skipped', 'lines')}}
@@ -74,7 +76,9 @@ def render_style(style, preview=False, mode='atlas'):
                 target.write(path, path.name)
             target.writestr(f"{style['name']}.style.json", json.dumps(original, ensure_ascii=False, indent=2) + '\n')
             target.writestr('build-report.json', json.dumps({key: result[key] for key in ('glyphs', 'atlas', 'skipped', 'kernings', 'packing', 'occupancy')}, ensure_ascii=False, indent=2) + '\n')
-        return archive.getvalue()
+        data = archive.getvalue()
+        report = {key: result[key] for key in ('glyphs', 'atlas', 'skipped', 'kernings', 'packing', 'occupancy')}
+        return (data, report) if with_report else data
 
 
 def make_server(port=8765):

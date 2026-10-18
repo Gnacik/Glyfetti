@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.5a1
+
+- Add an optional stdio MCP server with preset/font discovery, native coverage
+  checks, style expansion, inline PNG previews and full-quality exports.
+- Expose the style schema and generated artifacts as MCP resources. Each export
+  gets a unique folder and includes an editable raw style without overwriting
+  previous exports; artifact resources remain inside the configured output root.
+- Add `glyfetti mcp --print-config` using the current Python executable and an
+  absolute output path, plus client examples and English/Polish setup guides.
+- Keep MCP dependencies optional: the SDK needs Python 3.11+, while the existing
+  renderer, CLI and editor retain Python 3.10 support.
+- Test actual stdio subprocesses with current and legacy client negotiation,
+  image results, artifact readback, validation errors and optional-runtime behavior.
+
 ## 0.1.4a1
 
 - Add nested `simple` controls for custom colors, nine palettes, outline, 3D depth,

@@ -6,4 +6,5 @@ build/
 out/
 presets/out/
 .pytest_cache/
+glyfetti-output/
 *.patched.ttf

@@ -16,7 +16,7 @@ Every style is a small **JSON file**, so it can be versioned, shared, generated 
 by an **AI assistant** from a plain-language description like *"golden 3D letters with a soft shadow"*.
 
 > **Status: alpha (0.1).** The renderer, CLI, presets and BMFont/JSON export work today. The Unity importer is
-> experimental. The local web editor is available via `glyfetti serve`. The simple style layer is available; the MCP server is planned – see the [roadmap](#roadmap).
+> experimental. The local web editor is available via `glyfetti serve`. The simple style layer is available; the optional MCP server is available – see the [roadmap](#roadmap).
 
 <p align="center">
   <img src="docs/images/before_after.png" alt="Plain Titan One font versus the honey_gold Glyfetti style" width="100%">
@@ -191,6 +191,22 @@ See the [simple style reference](docs/STYLE_REFERENCE.md#2-simple-style) for all
 
 ![Create a style from a color or palette](docs/images/simple-editor.png)
 
+## Use Glyfetti through MCP
+
+With Python 3.11+ and the optional extra installed:
+
+```bash
+python -m pip install -e ".[mcp]"
+python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
+```
+
+Copy the generated server entry into your MCP client's settings. The client launches
+`glyfetti mcp` over stdio. Seven tools list presets/fonts, check font coverage,
+expand styles, return actual PNG previews, and export full-quality assets. Exported
+files have local paths and MCP resource URIs; earlier exports are not overwritten.
+The base CLI/editor still supports Python 3.10 without installing MCP dependencies.
+See [setup, tools and examples](docs/MCP.md) and the [client config template](examples/mcp-config.json).
+
 ## How a style is built
 
 <p align="center">
@@ -266,6 +282,8 @@ natively or through a small loader.
 ```text
 glyfetti title STYLE.json [--text "Level Complete!"] [--align left|center|right] [-o title.png]
 
+glyfetti mcp [--output-dir OUT] [--print-config]
+
 glyfetti serve [--port 8765] [--no-browser]
 
 glyfetti expand STYLE.json [-o expanded.json]
@@ -313,8 +331,7 @@ the colorful title/button text of casual games, where a baked atlas looks best. 
 you display.
 
 **Can an AI assistant create styles for me?**
-Yes – styles are plain JSON described by a JSON Schema, so any assistant can write one today. A dedicated MCP
-server that previews styles inside the chat is on the roadmap.
+Yes – styles are plain JSON described by a JSON Schema. The optional MCP server exposes presets, font checks, style expansion, inline PNG previews and exports to compatible assistants. See [MCP setup](docs/MCP.md).
 
 **Is it free for commercial games?**
 The code is MIT. Bundled fonts keep their own licenses (SIL OFL / Apache 2.0), which allow use in commercial
@@ -325,7 +342,7 @@ games. Check the license of any other font you use.
 - [x] Layered renderer, CLI, 12 presets, BMFont/JSON export, auto diacritics, JSON Schema
 - [x] Unity TextMeshPro importer + color shader (experimental)
 - [x] **Simple style layer** – ~12 knobs (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…) expanded into a full style
-- [ ] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
+- [x] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
 - [x] `glyfetti serve` – local web UI with live preview and sliders
 - [x] Horizontal GPOS / legacy kerning, MaxRects atlas packing
 - [x] Whole-word "title" mode with a single merged outline

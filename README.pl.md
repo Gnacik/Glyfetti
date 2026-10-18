@@ -16,7 +16,7 @@ Każdy styl to mały **plik JSON**: można go wersjonować, udostępniać, zaczy
 **asystenta AI**, żeby napisał go z opisu typu *„złote litery 3D z miękkim cieniem”*.
 
 > **Status: alpha (0.1).** Silnik, CLI, presety i eksport BMFont/JSON działają. Importer Unity jest
-> eksperymentalny. Warstwa prosta stylu jest dostępna; serwer MCP jest w planach – patrz [plan rozwoju](#plan-rozwoju).
+> eksperymentalny. Warstwa prosta stylu jest dostępna; opcjonalny serwer MCP jest dostępny – patrz [plan rozwoju](#plan-rozwoju).
 
 <p align="center">
   <img src="docs/images/before_after.png" alt="Zwykły font Titan One i styl honey_gold" width="100%">
@@ -95,6 +95,22 @@ Zapis JSON z edytora zawiera rozwinięte ustawienia do dalszej edycji.
 Wszystkie opcje opisuje [dokumentacja](docs/STYLE_REFERENCE.pl.md#2-styl-prosty).
 
 ![Tworzenie stylu z koloru lub palety](docs/images/simple-editor.png)
+
+## Glyfetti przez MCP
+
+Z Pythonem 3.11+ i opcjonalnym dodatkiem:
+
+```bash
+python -m pip install -e ".[mcp]"
+python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
+```
+
+Skopiuj wygenerowany wpis serwera do ustawień klienta MCP. Klient uruchamia
+`glyfetti mcp` przez stdio. Siedem narzędzi udostępnia presety, fonty, rozwijanie
+stylów, rzeczywiste podglądy PNG i eksport w pełnej jakości. Pliki mają ścieżki
+lokalne i URI zasobów MCP; poprzednie eksporty nie są nadpisywane. Zwykłe CLI
+oraz edytor nadal obsługują Python 3.10 bez zależności MCP.
+Patrz [instrukcja i narzędzia](docs/MCP.pl.md) oraz [szablon konfiguracji](examples/mcp-config.json).
 
 ## Jak zbudowany jest styl
 
@@ -237,8 +253,7 @@ SDF skaluje się idealnie, ale nie przeniesie wielokolorowego gradientu, boku 3D
 w największym rozmiarze, w jakim wyświetlasz tekst.
 
 **Czy AI może tworzyć style za mnie?**
-Tak, styl to zwykły JSON opisany schematem, więc każdy asystent napisze go już dziś. Serwer MCP z podglądem
-w czacie jest w planach.
+Tak, styl to zwykły JSON opisany schematem. Opcjonalny serwer MCP udostępnia presety, sprawdzanie fontów, rozwijanie stylów, podglądy PNG i eksporty. Patrz [konfiguracja MCP](docs/MCP.pl.md).
 
 **Czy mogę używać w grach komercyjnych?**
 Kod jest na MIT. Dołączone fonty mają własne licencje (SIL OFL / Apache 2.0), które pozwalają na użycie
@@ -249,7 +264,7 @@ w grach komercyjnych.
 - [x] Silnik warstw, CLI, 12 presetów, eksport BMFont/JSON, automatyczne polskie znaki, JSON Schema
 - [x] Importer Unity TextMeshPro + shader kolorowy (eksperymentalny)
 - [x] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
-- [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
+- [x] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
 - [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
 - [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects
 - [x] Tryb „title”: całe słowo ze wspólnym obrysem

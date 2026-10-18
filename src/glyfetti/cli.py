@@ -42,6 +42,10 @@ def main(argv=None):
     server.add_argument('--port', type=int, default=8765)
     server.add_argument('--no-browser', action='store_true')
 
+    mcp = sub.add_parser('mcp', help='run the optional MCP server over stdio (Python 3.11+)')
+    mcp.add_argument('--output-dir', default='glyfetti-output', help='directory for exported artifacts')
+    mcp.add_argument('--print-config', action='store_true', help='print a ready-to-copy client configuration instead of starting the server')
+
     a = ap.parse_args(argv)
     try:
         return run(a)
@@ -51,7 +55,14 @@ def main(argv=None):
 
 
 def run(a):
-    if a.cmd == 'serve':
+    if a.cmd == 'mcp':
+        from .mcp_server import connection_config, run_mcp
+        if a.print_config:
+            import json
+            print(json.dumps(connection_config(a.output_dir), ensure_ascii=False, indent=2))
+        else:
+            run_mcp(a.output_dir)
+    elif a.cmd == 'serve':
         from .server import serve
         serve(port=a.port, open_browser=not a.no_browser)
     elif a.cmd == 'expand':
