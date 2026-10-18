@@ -29,6 +29,17 @@ namespace Glyfetti.Editor
         public static TMP_FontAsset Build(string jsonPath)
         {
             var def = JsonUtility.FromJson<FontDef>(File.ReadAllText(jsonPath));
+            if (def == null || string.IsNullOrEmpty(def.name) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(def.name, @"^[A-Za-z0-9][A-Za-z0-9_-]*$") ||
+                def.size <= 0 || def.scaleW <= 0 || def.scaleH <= 0 || def.chars == null)
+                throw new System.ArgumentException("Invalid Glyfetti font metadata.");
+            var shader = Shader.Find("Glyfetti/ColorBitmapFont");
+            if (shader == null) throw new System.InvalidOperationException("Glyfetti color shader is missing. Reinstall the package.");
+            var ids = new HashSet<int>();
+            foreach (var c in def.chars)
+                if (c.id < 0 || c.id > 0x10FFFF || !ids.Add(c.id) || c.x < 0 || c.y < 0 ||
+                    c.w < 0 || c.h < 0 || c.x + c.w > def.scaleW || c.y + c.h > def.scaleH)
+                    throw new System.ArgumentException("Invalid or duplicate character in Glyfetti metadata.");
             string dir = Path.GetDirectoryName(jsonPath).Replace('\\', '/');
             string texPath = $"{dir}/{Path.GetFileNameWithoutExtension(jsonPath)}.png";
 
@@ -39,17 +50,25 @@ namespace Glyfetti.Editor
             imp.alphaIsTransparency = true;
             imp.mipmapEnabled = true;          // nicer when scaled down
             imp.npotScale = TextureImporterNPOTScale.None;
+            imp.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(def.scaleW, def.scaleH));
             imp.isReadable = false;
             imp.textureCompression = TextureImporterCompression.Uncompressed;
             imp.wrapMode = TextureWrapMode.Clamp;
             imp.filterMode = FilterMode.Bilinear;
             imp.SaveAndReimport();
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+            if (tex.width != def.scaleW || tex.height != def.scaleH)
+                throw new System.ArgumentException("Atlas dimensions do not match JSON metadata. Check texture import size limits.");
 
             string assetPath = $"{dir}/{def.name} TMP.asset";
-            AssetDatabase.DeleteAsset(assetPath);
-
-            var fa = ScriptableObject.CreateInstance<TMP_FontAsset>();
+            var fa = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
+            bool isNew = fa == null;
+            if (isNew && AssetDatabase.LoadMainAssetAtPath(assetPath) != null)
+                throw new System.InvalidOperationException("Output path is occupied by a different asset.");
+            if (isNew) fa = ScriptableObject.CreateInstance<TMP_FontAsset>();
+            else Undo.RecordObject(fa, "Update Glyfetti font");
+            fa.glyphTable.Clear();
+            fa.characterTable.Clear();
             fa.name = def.name;
             fa.atlasPopulationMode = AtlasPopulationMode.Static;
 
@@ -82,13 +101,19 @@ namespace Glyfetti.Editor
                 idx++;
             }
 
-            var mat = new Material(Shader.Find("Glyfetti/ColorBitmapFont")) { name = def.name + " Material" };
+            var mat = fa.material;
+            bool ownsMaterial = mat != null && AssetDatabase.GetAssetPath(mat) == assetPath;
+            bool addMaterial = !ownsMaterial;
+            if (addMaterial) mat = new Material(shader) { name = def.name + " Material" };
+            else Undo.RecordObject(mat, "Update Glyfetti material");
+            mat.shader = shader;
             mat.SetTexture("_MainTex", tex);
             fa.material = mat;
             fa.atlasTextures = new[] { tex };
 
-            AssetDatabase.CreateAsset(fa, assetPath);
-            AssetDatabase.AddObjectToAsset(mat, fa);
+            if (isNew) AssetDatabase.CreateAsset(fa, assetPath);
+            if (addMaterial) AssetDatabase.AddObjectToAsset(mat, fa);
+            EditorUtility.SetDirty(mat);
 
             // fields with internal setters – set via SerializedObject
             var so = new SerializedObject(fa);

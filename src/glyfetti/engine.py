@@ -4,11 +4,16 @@ Every glyph goes through the same layer stack (bottom-up):
   shadow -> extrude -> outline -> side -> fill -> bevel -> gloss
 All parameters live in a style JSON file (see docs/STYLE_REFERENCE.md).
 """
-import json, math, sys
+import hashlib
+import json, math
+import os
+import tempfile
+import warnings
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
+from .validation import DATA_DIR, validate_style
 
 
 def hex2rgb(h):
@@ -136,17 +141,22 @@ def style_glyph(m, st, S):
     return out
 
 
-def shelf_pack(sizes, width, pad):
+def shelf_pack(sizes, width, pad, max_height=8192):
     x = y = row_h = 0
     pos = []
     for w, h in sizes:
+        if w + 2 * pad > width:
+            raise ValueError(f'atlas_width: glyph width {w} needs at least {w + 2 * pad}px; increase atlas_width')
         if x + w + pad > width:
             x, y, row_h = 0, y + row_h + pad, 0
         pos.append((x + pad, y + pad))
         x += w + pad
         row_h = max(row_h, h)
     height = y + row_h + 2 * pad
-    return pos, 1 << math.ceil(math.log2(max(height, 1)))
+    height = 1 << math.ceil(math.log2(max(height, 1)))
+    if height > max_height:
+        raise ValueError(f'max_atlas_size: atlas height {height}px exceeds {max_height}px; increase atlas_width, reduce size or use fewer characters')
+    return pos, height
 
 
 def resolve_font(st, base):
@@ -155,26 +165,85 @@ def resolve_font(st, base):
     path = next((c for c in cands if c.exists()), None)
     if path is None:
         raise FileNotFoundError(f"font not found: {st['font']}")
+    if st.get('variation'):
+        from fontTools.ttLib import TTFont
+        with TTFont(path) as source:
+            if 'fvar' not in source:
+                raise ValueError('variation: font has no variable axes')
+            axes = source['fvar'].axes
+            variation = st['variation']
+            if isinstance(variation, list):
+                if len(variation) != len(axes):
+                    raise ValueError('variation: number of values must match the font axes')
+                variation = dict(zip((a.axisTag for a in axes), variation))
+            if set(variation) - {a.axisTag for a in axes}:
+                raise ValueError('variation: unknown font axis')
+            for axis in axes:
+                value = variation.get(axis.axisTag, axis.defaultValue)
+                if not axis.minValue <= value <= axis.maxValue:
+                    raise ValueError(f'variation.{axis.axisTag}: must be between {axis.minValue} and {axis.maxValue}')
+            st = dict(st, variation=variation)
     if st.get('auto_diacritics', True):
         from .patch import missing_chars, patch_font
-        if missing_chars(path, st['chars']):
+        from .patch import PL
+        if any(c in PL for c in missing_chars(path, st['chars'])):
+            from fontTools.ttLib import TTFont
+            with TTFont(path) as source:
+                if 'glyf' not in source:
+                    warnings.warn('Automatic diacritics unavailable for CFF outlines; missing characters will be reported.', stacklevel=2)
+                    return path, st
             cache = Path.home() / '.cache' / 'glyfetti'
             cache.mkdir(parents=True, exist_ok=True)
-            tag = '' if not isinstance(st.get('variation'), dict) else '_' + '_'.join(f'{k}{v}' for k, v in sorted(st['variation'].items()))
-            out = cache / f'{path.stem}{tag}-patched.ttf'
+            variation = st.get('variation') or {}
+            if isinstance(variation, list):
+                with TTFont(path) as source:
+                    axes = source['fvar'].axes if 'fvar' in source else []
+                    if len(variation) != len(axes):
+                        raise ValueError('variation: number of values must match the font axes')
+                    variation = dict(zip((a.axisTag for a in axes), variation))
+            digest = hashlib.sha256(path.read_bytes() + json.dumps(variation, sort_keys=True).encode() + b'patch-v2').hexdigest()
+            out = cache / f'{digest}-patched.ttf'
             if not out.exists():
-                patch_font(str(path), str(out), st.get('variation') or '')
-            if 'fvar' not in __import__('fontTools.ttLib', fromlist=['TTFont']).TTFont(str(out)):
-                st = dict(st); st.pop('variation', None)
+                fd, temporary = tempfile.mkstemp(suffix='.ttf', dir=cache)
+                os.close(fd)
+                try:
+                    patch_font(str(path), temporary, variation)
+                    os.replace(temporary, out)
+                finally:
+                    Path(temporary).unlink(missing_ok=True)
+            st = dict(st); st.pop('variation', None)
             return out, st
     return path, st
 
 
-FONTS_DIR = Path(__file__).resolve().parents[2] / 'fonts'
+FONTS_DIR = DATA_DIR / 'fonts'
+
+
+def effect_padding(st, font, chars, scale):
+    """Conservative padding for the complete effect stack, in final pixels."""
+    def layer(name):
+        value = st.get(name, {})
+        return value if value.get('enabled', True) else {}
+
+    side, shadow, extrude = (layer(k) for k in ('side', 'shadow', 'extrude'))
+    extent = st['outline']['width'] + st.get('embolden', 0)
+    extent += max(abs(side.get('dx', 0)), side.get('depth', 0))
+    extent += max(
+        abs(shadow.get('dx', 0)), abs(shadow.get('dy', 0)), 0
+    ) + 4 * shadow.get('blur', 0)
+    extent += extrude.get('depth', 0) + 4 * extrude.get('blur', 0)
+    jitter = st.get('jitter') or {}
+    if jitter.get('rotate', 0):
+        radius = max((max(abs(v) for v in font.getbbox(c, anchor='ls')) / scale for c in chars), default=0)
+        extent += 2 * radius * math.sin(math.radians(jitter['rotate']) / 2)
+    return math.ceil((extent + 4) * scale)
 
 
 def build(style_path, out_dir=None, preview_only=False):
-    st = json.loads(Path(style_path).read_text(encoding='utf-8'))
+    st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
+    maximum = st.get('max_atlas_size', 8192)
+    if st.get('atlas_width', 1024) > maximum:
+        raise ValueError('atlas_width: exceeds max_atlas_size')
     base = Path(style_path).parent
     font_path, st = resolve_font(st, base)
     S = st.get('supersample', 3)
@@ -184,24 +253,29 @@ def build(style_path, out_dir=None, preview_only=False):
     if var:
         if isinstance(var, dict):  # np. {"wght": 800, "wdth": 75}
             from fontTools.ttLib import TTFont
-            axes = TTFont(str(font_path))['fvar'].axes
+            with TTFont(str(font_path)) as source:
+                if 'fvar' not in source:
+                    raise ValueError('variation: font has no variable axes')
+                axes = source['fvar'].axes
+            unknown = set(var) - {a.axisTag for a in axes}
+            if unknown:
+                raise ValueError(f'variation: unknown axes {sorted(unknown)}')
             var = [var.get(a.axisTag, a.defaultValue) for a in axes]
         font.set_variation_by_axes(var)
     asc, desc = font.getmetrics()
     st['_line_top'] = 0
     st['_line_bottom'] = asc
-    eff = st['outline']['width'] + max(st.get('extrude', {}).get('depth', 0),
-                                       st.get('shadow', {}).get('dy', 0) + st.get('shadow', {}).get('blur', 0) * 3)
-    pad = int(math.ceil((eff + 4) * S))
     if preview_only:
-        st['chars'] = ''.join(st.get('preview', []))
+        st['chars'] = ''.join(st.get('preview', ['Level complete!', 'Score: 2 560']))
     chars = list(dict.fromkeys(st['chars'].replace('\n', '')))
     if ' ' in chars:
         chars.remove(' ')
     from fontTools.ttLib import TTFont as _TT
-    _cm = _TT(str(font_path)).getBestCmap()
+    with _TT(str(font_path)) as source:
+        _cm = source.getBestCmap() or {}
     skipped = ''.join(c for c in chars if ord(c) not in _cm)
     chars = [c for c in chars if ord(c) in _cm]
+    pad = effect_padding(st, font, chars, S)
 
     glyphs = []
     for ch in chars:
@@ -228,6 +302,8 @@ def build(style_path, out_dir=None, preview_only=False):
             im = Image.fromarray((m * 255).astype(np.uint8)).rotate(ang, Image.BICUBIC, center=(cx, by))
             m = np.asarray(im, np.float32) / 255.0
             by = by + dy
+        st['_line_top'] = by - asc
+        st['_line_bottom'] = by
         rgba = style_glyph(m, st, S)
         img = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
         img = img.resize((max(1, round(img.width / S)), max(1, round(img.height / S))), Image.LANCZOS)
@@ -238,7 +314,7 @@ def build(style_path, out_dir=None, preview_only=False):
         adv = font.getlength(ch) / S * st.get('condense', 1.0) + st.get('embolden', 0) * 2 + st.get('tracking', 0)
         glyphs.append(dict(ch=ch, img=img, ox=ox, oy=oy, adv=adv))
 
-    pos, H = shelf_pack([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2)
+    pos, H = shelf_pack([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum)
     W = st.get('atlas_width', 1024)
     atlas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     base_y = round(asc / S) + st['outline']['width']
@@ -270,19 +346,30 @@ def build(style_path, out_dir=None, preview_only=False):
     # preview: assemble text from the atlas using the metrics (tests them)
     gm = {g['ch']: g for g in glyphs}
     sample = st.get('preview', ['Level complete!', 'Score: 2 560'])
-    pw = max(sum(round(gm[c]['adv']) if c in gm else space_adv for c in s) for s in sample) + 80
+    placements = []
+    left = top = 0
+    right, bottom = 0, line_h * len(sample)
+    for i, text in enumerate(sample):
+        cursor = 0
+        for char in text:
+            if char in gm:
+                glyph = gm[char]
+                x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
+                placements.append((glyph['img'], x, y))
+                left, top = min(left, x), min(top, y)
+                right, bottom = max(right, x + glyph['img'].width), max(bottom, y + glyph['img'].height)
+                cursor += round(glyph['adv'])
+            else:
+                cursor += space_adv
+        left, right = min(left, cursor), max(right, cursor)
+    pw, ph = right - left + 80, bottom - top + 60
+    if pw * ph > 64 * 1024 * 1024:
+        raise ValueError('preview: image exceeds 64 megapixels; shorten preview text or reduce size')
     bgc = st.get('preview_bg', '#ffffff')
     bg = (0, 0, 0, 0) if bgc == 'transparent' else tuple(int(bgc.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
-    prev = Image.new('RGBA', (pw, line_h * len(sample) + 60), bg)
-    for i, s in enumerate(sample):
-        cx, cy = 40, 30 + i * line_h
-        for c in s:
-            if c in gm:
-                g = gm[c]
-                prev.alpha_composite(g['img'], (cx + g['xoff'], cy + g['yoff']))
-                cx += round(g['adv'])
-            else:
-                cx += space_adv
+    prev = Image.new('RGBA', (pw, ph), bg)
+    for image, x, y in placements:
+        prev.alpha_composite(image, (x - left + 40, y - top + 30))
     prev.save(out / f'{name}_preview.png')
 
     sheet = Image.new('RGBA', (W, H), (255, 255, 255, 255))

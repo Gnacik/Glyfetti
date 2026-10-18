@@ -1,6 +1,7 @@
 """Render every preset in a folder and compose a gallery sheet (PNG)."""
 import json
 from pathlib import Path
+import tempfile
 from PIL import Image, ImageDraw, ImageFont
 from .engine import build, FONTS_DIR
 
@@ -19,7 +20,6 @@ def _font(size, weight=800):
 def make_gallery(preset_dir, out_png, title='Glyfetti presets',
                  subtitle='one JSON file per style  •  full character sets  •  BMFont / JSON / Unity TMP export'):
     preset_dir = Path(preset_dir)
-    work = preset_dir / 'out'
     styles = sorted(preset_dir.glob('*.json'), key=lambda p: json.loads(p.read_text('utf-8')).get('order', 999))
     rows = (len(styles) + COLS - 1) // COLS
     W = COLS * TW + (COLS + 1) * GAP
@@ -30,11 +30,15 @@ def make_gallery(preset_dir, out_png, title='Glyfetti presets',
     d.text((GAP, 100), subtitle, fill='#6B5D4F', font=_font(26, 600))
     for i, sp in enumerate(styles):
         st = json.loads(sp.read_text('utf-8'))
-        build(sp, out_dir=work, preview_only=True)
         x = GAP + (i % COLS) * (TW + GAP)
         y = 150 + (i // COLS) * (TH + 80 + GAP)
-        tile = Image.new('RGB', (TW, TH), st.get('preview_bg', '#ffffff'))
-        pv = Image.open(work / f"{st['name']}_preview.png").convert('RGBA')
+        background = st.get('preview_bg', '#ffffff')
+        tile = Image.new('RGB', (TW, TH), '#ffffff' if background == 'transparent' else background)
+        with tempfile.TemporaryDirectory(prefix='glyfetti-gallery-') as temporary:
+            work = Path(temporary)
+            build(sp, out_dir=work, preview_only=True)
+            with Image.open(work / f"{st['name']}_preview.png") as image:
+                pv = image.convert('RGBA')
         s = min((TW - 60) / pv.width, (TH - 30) / pv.height, 1.0)
         pv = pv.resize((round(pv.width * s), round(pv.height * s)), Image.LANCZOS)
         tile.paste(pv, ((TW - pv.width) // 2, (TH - pv.height) // 2), pv)

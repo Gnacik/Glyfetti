@@ -1,6 +1,6 @@
 {
   "name": "com.glyfetti.tmp",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.1-alpha.1",
   "displayName": "Glyfetti for TextMeshPro",
   "description": "Imports Glyfetti color bitmap font atlases (PNG + JSON) as TextMeshPro font assets, with a shader that keeps baked gradients, outlines, 3D sides and shadows.",
   "unity": "2021.3",

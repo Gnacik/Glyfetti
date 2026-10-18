@@ -16,7 +16,7 @@ Every style is a small **JSON file**, so it can be versioned, shared, generated 
 by an **AI assistant** from a plain-language description like *"golden 3D letters with a soft shadow"*.
 
 > **Status: alpha (0.1).** The renderer, CLI, presets and BMFont/JSON export work today. The Unity importer is
-> experimental. The simple style layer and the MCP server are planned – see the [roadmap](#roadmap).
+> experimental. The local web editor is available via `glyfetti serve`. The simple style layer and the MCP server are planned – see the [roadmap](#roadmap).
 
 <p align="center">
   <img src="docs/images/before_after.png" alt="Plain Titan One font versus the honey_gold Glyfetti style" width="100%">
@@ -78,6 +78,32 @@ Output for a style named `honey_gold`:
 | `honey_gold.fnt` | BMFont text metrics |
 | `honey_gold.json` | metrics for the Unity importer |
 | `honey_gold_preview.png` | text assembled from the atlas (tests metrics and looks) |
+
+## Local style editor
+
+```bash
+glyfetti serve
+```
+
+Open the printed `http://127.0.0.1:8765` URL (the browser opens automatically).
+Choose a preset and typeface, enter your text, then adjust size, outline, 3D depth,
+gloss, shadow, spacing and colors. The draft preview updates after a short pause;
+**Export atlas ZIP** renders at the style's full supersampling quality.
+
+The ZIP includes the transparent atlas, BMFont and Unity metrics, preview images,
+an editable `.style.json` and `build-report.json` listing skipped characters.
+Preview text characters are added to the exported character set. **Save style JSON**
+lets you continue later using the raw JSON panel or `glyfetti build`.
+For your own font, enter its absolute TTF/OTF path. Saved editor styles retain that
+local path; update it when moving a style to another computer. Fonts are not copied
+into the export. All rendering runs locally. Stop the server with Ctrl+C.
+
+Styles are validated before rendering; `glyfetti validate my_style.json` checks a file
+without generating images. `atlas_width` must fit every glyph including effects.
+`max_atlas_size` defaults to 8192 pixels in either dimension; an oversized export
+fails with a clear message instead of silently cropping glyphs.
+
+![Local style editor with live font preview](docs/images/editor.png)
 
 ## How a style is built
 
@@ -152,6 +178,10 @@ natively or through a small loader.
 ## Command line
 
 ```text
+glyfetti serve [--port 8765] [--no-browser]
+
+glyfetti validate STYLE.json [STYLE2.json …]
+
 glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only]
 glyfetti gallery [FOLDER] [-o gallery.png]
 glyfetti check-font FONT.ttf [--chars "…"]
@@ -162,7 +192,7 @@ glyfetti patch SRC.ttf DST.ttf [--axes wght=700]
 
 | | Glyfetti | Hiero | SnowB BMF | Glyph Designer | KernSmith |
 |---|---|---|---|---|---|
-| Interface | CLI + JSON (web UI planned) | desktop GUI | web GUI | macOS GUI | .NET library |
+| Interface | CLI + JSON + local web UI | desktop GUI | web GUI | macOS GUI | .NET library |
 | Gradient / outline / shadow | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 3D side wrapped by the outline | ✅ | – | – | – | – |
 | Bevel and gloss | ✅ | – | – | ✅ | – |
@@ -206,7 +236,7 @@ games. Check the license of any other font you use.
 - [x] Unity TextMeshPro importer + color shader (experimental)
 - [ ] **Simple style layer** – ~12 knobs (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…) expanded into a full style
 - [ ] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
-- [ ] `glyfetti serve` – local web UI with live preview and sliders
+- [x] `glyfetti serve` – local web UI with live preview and sliders
 - [ ] Kerning from the font's GPOS table, MaxRects atlas packing
 - [ ] Whole-word "title" mode with a single merged outline
 - [ ] Palette extraction from a reference image

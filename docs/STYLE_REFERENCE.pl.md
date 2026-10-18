@@ -108,6 +108,7 @@ Z jednego koloru bazowego (w przestrzeni OKLCH, żeby jasność była równa dla
 | `supersample` | 1–4 | 3 | renderowanie w N× większej skali i zmniejszenie (gładkie krawędzie, ale wolniej) |
 | `chars` | string | **wymagany** | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
 | `atlas_width` | px | 1024 | szerokość atlasu; wysokość dobierana jako potęga 2 |
+| `max_atlas_size` | px | 8192 | maksymalna szerokość i wysokość atlasu; przekroczenie limitu zgłasza błąd |
 | `tracking` | px | 0 | dodatkowy odstęp między literami; ujemny zbliża litery i zlewa obrysy |
 | `line_height` | mnożnik | 1.15 | wysokość linii względem metryk fontu |
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |

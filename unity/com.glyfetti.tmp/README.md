@@ -11,3 +11,5 @@ https://github.com/Gnacik/glyfetti.git?path=/unity/com.glyfetti.tmp
 3. Assign `<name> TMP.asset` to a TextMeshPro component and keep its **vertex color white**.
 
 Status: **experimental** – please report your Unity/TMP version in issues if something breaks.
+
+Reimporting the same name in the same folder updates the existing font asset and its material in place, preserving GUIDs and scene references. Import checks atlas dimensions and glyph rectangles before changing the font asset.

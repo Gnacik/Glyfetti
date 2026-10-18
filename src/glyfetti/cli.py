@@ -14,7 +14,7 @@ def main(argv=None):
     b.add_argument('--preview-only', action='store_true', help='render only the preview text (fast)')
 
     g = sub.add_parser('gallery', help='render all presets in a folder into one gallery PNG')
-    g.add_argument('folder', nargs='?', default='presets')
+    g.add_argument('folder', nargs='?')
     g.add_argument('-o', '--out', default='gallery.png')
 
     p = sub.add_parser('patch', help='add missing Polish diacritics to a font (composite glyphs)')
@@ -25,8 +25,32 @@ def main(argv=None):
     c.add_argument('font')
     c.add_argument('--chars', default='ĄĆĘŁŃÓŚŹŻąćęłńóśźżÄÖÜäöüßÉÈÊéèêÇçÑñČŘŠŽčřšž€…„”«»')
 
+    v = sub.add_parser('validate', help='validate style JSON without rendering')
+    v.add_argument('style', nargs='+')
+
+    server = sub.add_parser('serve', help='open the local style editor with live preview')
+    server.add_argument('--port', type=int, default=8765)
+    server.add_argument('--no-browser', action='store_true')
+
     a = ap.parse_args(argv)
-    if a.cmd == 'build':
+    try:
+        return run(a)
+    except (ValueError, OSError, KeyError) as error:
+        print(f'glyfetti: {error}', file=sys.stderr)
+        return 2
+
+
+def run(a):
+    if a.cmd == 'serve':
+        from .server import serve
+        serve(port=a.port, open_browser=not a.no_browser)
+    elif a.cmd == 'validate':
+        import json
+        from .validation import validate_style
+        for filename in a.style:
+            validate_style(json.loads(Path(filename).read_text('utf-8')))
+            print(f'{filename}: valid')
+    elif a.cmd == 'build':
         from .engine import build
         for s in a.style:
             r = build(s, out_dir=a.out, preview_only=a.preview_only)
@@ -36,7 +60,9 @@ def main(argv=None):
             print(msg)
     elif a.cmd == 'gallery':
         from .gallery import make_gallery
-        print(make_gallery(a.folder, a.out))
+        from .validation import DATA_DIR
+        folder = a.folder or ('presets' if Path('presets').is_dir() else DATA_DIR / 'presets')
+        print(make_gallery(folder, a.out))
     elif a.cmd == 'patch':
         from .patch import patch_font
         print('added:', patch_font(a.src, a.dst, a.axes) or '-')

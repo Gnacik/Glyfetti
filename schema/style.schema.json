@@ -18,7 +18,10 @@
     },
     "name": {
       "type": "string",
-      "description": "Style name and output file name."
+      "description": "Style name and output file name.",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
     },
     "description": {
       "type": "string"
@@ -29,7 +32,8 @@
     },
     "font": {
       "type": "string",
-      "description": "TTF/OTF path, relative to the style file."
+      "description": "TTF/OTF path, relative to the style file.",
+      "minLength": 1
     },
     "font_label": {
       "type": "string",
@@ -58,7 +62,7 @@
       "description": "Compose missing Polish letters from accents in the font."
     },
     "size": {
-      "type": "number",
+      "type": "integer",
       "description": "Font size in the atlas (px).",
       "minimum": 8,
       "maximum": 512
@@ -71,15 +75,21 @@
     },
     "chars": {
       "type": "string",
-      "description": "Characters to include."
+      "description": "Characters to include.",
+      "minLength": 1,
+      "maxLength": 10000
     },
     "atlas_width": {
       "type": "integer",
-      "default": 1024
+      "default": 1024,
+      "minimum": 8,
+      "maximum": 8192
     },
     "tracking": {
       "type": "number",
-      "description": "Extra letter spacing (px); negative merges outlines."
+      "description": "Extra letter spacing (px); negative merges outlines.",
+      "minimum": -512,
+      "maximum": 512
     },
     "line_height": {
       "type": "number",
@@ -102,12 +112,17 @@
     "preview": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "maxLength": 2000,
+        "pattern": "^[^\\r\\n]*$"
+      },
+      "minItems": 1,
+      "maxItems": 20
     },
     "preview_bg": {
       "type": "string",
-      "description": "#RRGGBB or 'transparent'."
+      "description": "#RRGGBB or 'transparent'.",
+      "pattern": "^(#[0-9A-Fa-f]{6}|transparent)$"
     },
     "jitter": {
       "oneOf": [
@@ -119,16 +134,21 @@
           "properties": {
             "rotate": {
               "type": "number",
-              "description": "Max rotation (deg)."
+              "description": "Max rotation (deg).",
+              "minimum": 0,
+              "maximum": 45
             },
             "y": {
               "type": "number",
-              "description": "Max vertical offset (px)."
+              "description": "Max vertical offset (px).",
+              "minimum": 0,
+              "maximum": 100
             },
             "seed": {
               "type": "integer"
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -165,7 +185,8 @@
           ],
           "default": "glyph"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "outline": {
       "type": "object",
@@ -184,7 +205,8 @@
           "minimum": 0,
           "maximum": 40
         }
-      }
+      },
+      "additionalProperties": false
     },
     "side": {
       "type": "object",
@@ -202,7 +224,9 @@
         },
         "dx": {
           "type": "number",
-          "description": "Horizontal skew of the side (px)."
+          "description": "Horizontal skew of the side (px).",
+          "minimum": -512,
+          "maximum": 512
         },
         "color_top": {
           "type": "string",
@@ -212,7 +236,30 @@
           "type": "string",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "depth",
+              "color_top",
+              "color_bottom"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
     },
     "bevel": {
       "type": "object",
@@ -226,12 +273,14 @@
           "type": "number",
           "description": "Bevel width (px).",
           "minimum": 0,
-          "maximum": 40
+          "maximum": 40,
+          "exclusiveMinimum": 0
         },
         "soften": {
           "type": "number",
           "description": "Height map smoothing (px).",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 40
         },
         "light_angle": {
           "type": "number",
@@ -257,7 +306,33 @@
           "minimum": 0,
           "maximum": 1
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "size",
+              "light_angle",
+              "highlight_color",
+              "highlight_strength",
+              "shadow_color",
+              "shadow_strength"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
     },
     "gloss": {
       "type": "object",
@@ -280,7 +355,8 @@
         "inset": {
           "type": "number",
           "description": "Inset from edge (px).",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 100
         },
         "height": {
           "type": "number",
@@ -291,9 +367,35 @@
         "blur": {
           "type": "number",
           "description": "",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 100
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "color",
+              "opacity",
+              "inset",
+              "height",
+              "blur"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
     },
     "shadow": {
       "type": "object",
@@ -315,18 +417,47 @@
         },
         "dx": {
           "type": "number",
-          "description": "Offset X (px)."
+          "description": "Offset X (px).",
+          "minimum": -512,
+          "maximum": 512
         },
         "dy": {
           "type": "number",
-          "description": "Offset Y (px)."
+          "description": "Offset Y (px).",
+          "minimum": -512,
+          "maximum": 512
         },
         "blur": {
           "type": "number",
           "description": "Blur (px). dx=dy=0 + large blur = glow.",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 100
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "color",
+              "opacity",
+              "dx",
+              "dy"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
     },
     "extrude": {
       "type": "object",
@@ -343,7 +474,8 @@
         "depth": {
           "type": "number",
           "description": "Offset of the base outside the outline (px).",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 100
         },
         "opacity": {
           "type": "number",
@@ -354,9 +486,40 @@
         "blur": {
           "type": "number",
           "description": "",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 100
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {},
+          "else": {
+            "required": [
+              "color",
+              "depth"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "max_atlas_size": {
+      "type": "integer",
+      "minimum": 8,
+      "maximum": 8192,
+      "default": 8192,
+      "description": "Maximum atlas width and height; oversized builds fail without cropping."
     }
-  }
+  },
+  "additionalProperties": false
 }

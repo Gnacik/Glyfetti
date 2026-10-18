@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Glyfetti — Type playground</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<a class="skip" href="#preview-panel">Skip to preview</a>
+<header><a class="wordmark" href="/">glyfetti<span>✳</span></a><span class="badge">TYPE PLAYGROUND</span><span class="local">● All rendering stays on your computer</span></header>
+<main>
+<aside aria-label="Style controls">
+  <div class="intro"><span class="eyebrow">A LITTLE TYPE MAGIC</span><h1>Make letters <br>worth looking at.</h1><p>Pick a look. Make it yours. Take it into your game.</p></div>
+  <form id="controls">
+    <label for="preset">01 / Starting point</label><select id="preset"></select>
+    <label for="font">Typeface</label><select id="font"></select>
+    <details><summary>Use your own font</summary><label for="font-path">Absolute TTF / OTF path on this computer</label><input id="font-path" type="text" placeholder="C:\Fonts\MyFont.ttf"><button type="button" id="use-font">Use font</button></details>
+    <label for="text">02 / Your words</label><textarea id="text" rows="3" maxlength="1000" spellcheck="false">Level Complete!
+Score: 2 560</textarea>
+    <fieldset><legend>03 / Shape & finish</legend><div id="sliders"></div></fieldset>
+    <div class="colors"><label>Top fill<input id="top-color" type="color"></label><label>Bottom fill<input id="bottom-color" type="color"></label><label>Outline<input id="outline-color" type="color"></label></div>
+    <button type="button" id="reset" class="secondary">Reset preset</button>
+  </form>
+</aside>
+<section id="preview-panel" aria-label="Live preview">
+  <div class="preview-heading"><div><span class="eyebrow">THE PREVIEW</span><h2>Your next great title.</h2></div><label class="background">Background<input type="color" id="background" value="#8b5a2b"></label></div>
+  <div class="preview-stage" id="stage"><img id="preview" alt="Rendered preview of your styled text" hidden><span id="placeholder">Your letters are warming up…</span></div>
+  <div class="preview-foot"><p id="status" role="status" aria-live="polite">Loading presets…</p><span>Draft preview · export uses full quality</span></div>
+  <div class="export"><div><span class="eyebrow">READY FOR YOUR GAME</span><h2>From playground to production.</h2><p>Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.</p></div><div class="export-actions"><button id="export" disabled>Export atlas ZIP ↗</button><button id="save-style" class="secondary" disabled>Save style JSON</button></div></div>
+  <details class="advanced"><summary>Edit raw style JSON</summary><p>Use advanced options or paste a saved style. Font paths must be absolute.</p><label for="json">Style definition</label><textarea id="json" rows="16" spellcheck="false"></textarea><button id="apply-json" type="button">Apply JSON</button></details>
+  <p class="note">Preview text characters are added to the exported character set. Missing characters are reported below the preview.</p>
+</section>
+</main><footer>GLYFETTI / Colorful type. Consistent alphabets. <span>Made for the playful side of games.</span></footer>
+</body></html>

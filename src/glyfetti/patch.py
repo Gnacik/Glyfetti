@@ -44,13 +44,23 @@ def patch_font(src, dst, axes=''):
             loc = {k: float(v) for k, v in (p.split('=') for p in axes.split(',') if p)}
         loc = {ax.axisTag: loc.get(ax.axisTag, ax.defaultValue) for ax in font['fvar'].axes}
         font = instancer.instantiateVariableFont(font, loc)
-    glyf, hmtx, cm = font['glyf'], font['hmtx'], font.getBestCmap()
+    if 'glyf' not in font:
+        font.close()
+        raise ValueError('Automatic diacritics require TrueType outlines (glyf); use a font with native characters or disable auto_diacritics.')
+    glyf, hmtx, cm = font['glyf'], font['hmtx'], font.getBestCmap() or {}
     upm = font['head'].unitsPerEm
-    top_upper = mark_bottom_from(font, glyf, cm, 'Ó')
-    top_lower = mark_bottom_from(font, glyf, cm, 'ó')
+    def accent_top(reference, fallback):
+        if ord(reference) in cm and 'acute' in glyf:
+            return mark_bottom_from(font, glyf, cm, reference)
+        if ord(fallback) in cm:
+            return bounds(glyf, cm[ord(fallback)])[3] + upm * 0.04
+        return upm * 0.8
+
+    top_upper = accent_top('Ó', 'O')
+    top_lower = accent_top('ó', 'o')
     added = []
     for ch, (base, mark, mode) in PL.items():
-        if ord(ch) in cm or mark not in glyf.keys():
+        if ord(ch) in cm or mark not in glyf or ord(base) not in cm:
             continue
         bn = cm[ord(base)]
         bx0, by0, bx1, by1 = bounds(glyf, bn)
@@ -80,11 +90,13 @@ def patch_font(src, dst, axes=''):
         added.append(ch)
     font.setGlyphOrder(list(glyf.glyphOrder))
     font.save(dst)
+    font.close()
     return ''.join(added)
 
 
 def missing_chars(path, chars):
-    cm = TTFont(path).getBestCmap()
+    with TTFont(path) as font:
+        cm = font.getBestCmap() or {}
     return ''.join(c for c in chars if not c.isspace() and ord(c) not in cm)
 
 

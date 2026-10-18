@@ -108,6 +108,7 @@ From a single base color (in OKLCH space, so lightness stays even across hues):
 | `supersample` | 1–4 | 3 | render at N× scale, then downscale (smoother edges, slower) |
 | `chars` | string | **required** | character set for the atlas (duplicates and spaces are skipped; space is always added) |
 | `atlas_width` | px | 1024 | atlas width; height is picked as a power of 2 |
+| `max_atlas_size` | px | 8192 | maximum atlas width and height; oversized exports fail without cropping |
 | `tracking` | px | 0 | extra letter spacing; negative pulls letters together and merges outlines |
 | `line_height` | multiplier | 1.15 | line height relative to font metrics |
 | `condense` | 0.5–1.5 | 1.0 | horizontal glyph scaling (condensed < 1) |

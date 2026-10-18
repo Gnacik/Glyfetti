@@ -1,0 +1,82 @@
+'use strict';
+const $ = id => document.getElementById(id);
+let presets = [], style, token, timer, rendering = false, pending = false, exporting = false, revision = 0;
+const knobs = [
+  ['size', 'Size', 16, 180, 1, 'px'], ['outline.width', 'Outline', 0, 20, .5, 'px'],
+  ['side.depth', '3D depth', 0, 30, 1, 'px'], ['gloss.opacity', 'Gloss', 0, 1, .01, ''],
+  ['shadow.blur', 'Shadow softness', 0, 30, 1, 'px'], ['tracking', 'Letter spacing', -12, 16, 1, 'px'],
+  ['condense', 'Width', .5, 1.5, .01, '×']
+];
+function get(path) { return path.split('.').reduce((v, k) => v?.[k], style); }
+function set(path, value) { const keys = path.split('.'); let node = style; for (const k of keys.slice(0, -1)) node = node[k] ||= {}; node[keys.at(-1)] = value; }
+function message(text, error = false) { $('status').textContent = text; $('status').dataset.error = String(error); }
+function download(data, name) { const url = URL.createObjectURL(data), link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
+function sync() {
+  $('font').value = style.font; $('text').value = (style.preview || ['Level Complete!']).join('\n');
+  $('background').value = style.preview_bg === 'transparent' ? '#f5f1e8' : (style.preview_bg || '#ffffff');
+  $('top-color').value = style.fill.stops[0][1]; $('bottom-color').value = style.fill.stops.at(-1)[1]; $('outline-color').value = style.outline.color;
+  $('sliders').replaceChildren();
+  for (const [path, name, min, max, step, unit] of knobs) {
+    const id = path.replace('.', '-'), label = document.createElement('label'), output = document.createElement('output'), input = document.createElement('input');
+    label.className = 'range-label'; label.htmlFor = id; label.textContent = name; output.textContent = `${get(path) ?? 0}${unit}`; label.append(output);
+    input.id = id; input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = get(path) ?? 0;
+    input.addEventListener('input', () => {
+      if (path === 'side.depth' && !style.side?.color_top) style.side = { depth: 0, dx: 1, color_top: style.fill.stops.at(-1)[1], color_bottom: style.outline.color };
+      if (path === 'gloss.opacity' && !style.gloss?.color) style.gloss = { color: '#ffffff', opacity: 0, inset: 2, height: .4, blur: 3 };
+      if (path === 'shadow.blur' && !style.shadow?.color) style.shadow = { color: '#000000', opacity: .4, dx: 0, dy: 4, blur: 0 };
+      set(path, Number(input.value));
+      const layer = path.split('.')[0]; if (['side', 'gloss', 'shadow'].includes(layer)) style[layer].enabled = true;
+      output.textContent = `${input.value}${unit}`; schedule();
+    });
+    $('sliders').append(label, input);
+  }
+  $('json').value = JSON.stringify(style, null, 2);
+}
+function schedule() { revision++; pending = true; $('json').value = JSON.stringify(style, null, 2); clearTimeout(timer); timer = setTimeout(preview, 450); }
+async function request(endpoint, value) {
+  const response = await fetch(`/api/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Glyfetti-Token': token }, body: JSON.stringify(value) });
+  if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'Request failed'); }
+  return response;
+}
+async function preview() {
+  if (rendering || exporting || !pending) return;
+  rendering = true; pending = false; const current = revision; message('Rendering your letters…');
+  try {
+    const response = await request('preview', style), result = await response.json();
+    if (current === revision) {
+      $('preview').src = result.image; $('preview').hidden = false; $('placeholder').hidden = true;
+      message(`${result.glyphs} glyphs · ${result.atlas.join(' × ')} draft atlas${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
+    }
+  } catch (error) { if (current === revision) message(error.message, true); }
+  finally { rendering = false; if (pending) preview(); }
+}
+function selectPreset() { style = structuredClone(presets[Number($('preset').value)]); sync(); schedule(); }
+$('controls').addEventListener('submit', event => event.preventDefault());
+$('preset').addEventListener('change', selectPreset); $('reset').addEventListener('click', selectPreset);
+$('font').addEventListener('change', () => { style.font = $('font').value; delete style.variation; schedule(); });
+$('use-font').addEventListener('click', () => { const path = $('font-path').value.trim(); if (!path) return; style.font = path; delete style.variation; schedule(); });
+$('text').addEventListener('input', () => { style.preview = $('text').value.split('\n'); schedule(); });
+for (const [id, change] of [ ['top-color', value => style.fill.stops[0][1] = value], ['bottom-color', value => style.fill.stops.at(-1)[1] = value], ['outline-color', value => style.outline.color = value], ['background', value => style.preview_bg = value] ]) {
+  $(id).addEventListener('input', event => { change(event.target.value); schedule(); });
+}
+function exportStyle() { const result = structuredClone(style); result.chars = [...new Set(result.chars + (result.preview || []).join(''))].join(''); return result; }
+$('save-style').addEventListener('click', () => download(new Blob([JSON.stringify(exportStyle(), null, 2) + '\n'], { type: 'application/json' }), `${style.name}.style.json`));
+$('export').addEventListener('click', async () => {
+  exporting = true; $('export').disabled = true; const snapshot = exportStyle(); message('Building full-quality atlas. This can take a minute…');
+  try { const response = await request('export', snapshot); download(await response.blob(), `${snapshot.name}.zip`); message('Atlas exported. Your ZIP includes the editable style.'); }
+  catch (error) { message(error.message, true); }
+  finally { exporting = false; $('export').disabled = false; if (pending) preview(); }
+});
+$('apply-json').addEventListener('click', async () => {
+  try { const parsed = JSON.parse($('json').value); await request('validate', parsed); style = parsed; sync(); schedule(); }
+  catch (error) { message(error.message, true); }
+});
+(async () => {
+  try {
+    const response = await fetch('/api/catalog'); if (!response.ok) throw new Error('Could not load presets.');
+    const catalog = await response.json(); presets = catalog.presets; token = catalog.token;
+    presets.forEach((preset, index) => { const option = document.createElement('option'); option.value = index; option.textContent = preset.name.replaceAll('_', ' '); $('preset').append(option); });
+    catalog.fonts.forEach(path => { const option = document.createElement('option'); option.value = path; option.textContent = path.split(/[\\/]/).at(-1).replace(/\.ttf$/i, ''); $('font').append(option); });
+    selectPreset(); $('export').disabled = false; $('save-style').disabled = false;
+  } catch (error) { message(error.message, true); }
+})();

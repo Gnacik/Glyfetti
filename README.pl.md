@@ -101,6 +101,29 @@ Wszystkie parametry opisuje **[dokumentacja stylów](docs/STYLE_REFERENCE.pl.md)
 | `chocolate_cream` | Chewy | casualowe tytuły |
 | `flat_ui` | Dosis | drobny tekst UI, liczby |
 
+## Lokalny edytor stylów
+
+```bash
+glyfetti serve
+```
+
+Przeglądarka otworzy lokalny edytor pod adresem `http://127.0.0.1:8765`.
+Wybierz preset i font, wpisz tekst, a następnie ustaw suwaki i kolory. Podgląd jest
+roboczy; **Export atlas ZIP** renderuje w pełnej jakości ustawionej w stylu.
+ZIP zawiera atlas PNG, metryki BMFont/Unity, podglądy, edytowalny `.style.json`
+i `build-report.json` z listą brakujących znaków. Znaki z podglądu są dodawane
+do zestawu eksportowanego atlasu.
+
+**Save style JSON** zapisuje styl do dalszej pracy. Wczytaj jego zawartość w panelu
+**Edit raw style JSON** albo użyj `glyfetti build`. Własny font wskaż pełną ścieżką
+TTF/OTF. Edytor zapisuje tę lokalną ścieżkę w JSON; po przeniesieniu stylu na inny
+komputer trzeba ją zmienić. Eksport nie zawiera plików fontów. Renderowanie działa
+lokalnie. Serwer zatrzymasz przez Ctrl+C.
+
+`glyfetti validate moj_styl.json` sprawdza styl bez renderowania. Za mały atlas
+zgłasza błąd zamiast obcinać litery. Parametr `max_atlas_size` ogranicza szerokość
+i wysokość tekstury (domyślnie 8192 px).
+
 ## Unity (TextMeshPro)
 
 **Package Manager → Add package from git URL:**
@@ -148,7 +171,7 @@ w grach komercyjnych.
 - [x] Importer Unity TextMeshPro + shader kolorowy (eksperymentalny)
 - [ ] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
 - [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
-- [ ] `glyfetti serve`: lokalne web UI z podglądem na żywo
+- [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
 - [ ] Kerning z tabeli GPOS, pakowanie atlasu MaxRects
 - [ ] Tryb „title”: całe słowo ze wspólnym obrysem
 - [ ] Wyciąganie palety z obrazka referencyjnego
