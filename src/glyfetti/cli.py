@@ -54,7 +54,8 @@ def run(a):
         from .engine import build
         for s in a.style:
             r = build(s, out_dir=a.out, preview_only=a.preview_only)
-            msg = f"{r['name']}: {r['glyphs']} glyphs, atlas {r['atlas'][0]}x{r['atlas'][1]} -> {r['out']}"
+            msg = (f"{r['name']}: {r['glyphs']} glyphs, {r['kernings']} kerning pairs, "
+                   f"atlas {r['atlas'][0]}x{r['atlas'][1]} ({r['packing']}, {r['occupancy']:.0%} occupied) -> {r['out']}")
             if r['skipped']:
                 msg += f"  (not in font, skipped: {r['skipped']})"
             print(msg)

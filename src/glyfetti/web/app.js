@@ -12,6 +12,7 @@ function set(path, value) { const keys = path.split('.'); let node = style; for 
 function message(text, error = false) { $('status').textContent = text; $('status').dataset.error = String(error); }
 function download(data, name) { const url = URL.createObjectURL(data), link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
 function sync() {
+  $('kerning').checked = style.kerning !== false; $('packing').value = style.atlas_packing || 'maxrects';
   $('font').value = style.font; $('text').value = (style.preview || ['Level Complete!']).join('\n');
   $('background').value = style.preview_bg === 'transparent' ? '#f5f1e8' : (style.preview_bg || '#ffffff');
   $('top-color').value = style.fill.stops[0][1]; $('bottom-color').value = style.fill.stops.at(-1)[1]; $('outline-color').value = style.outline.color;
@@ -45,7 +46,7 @@ async function preview() {
     const response = await request('preview', style), result = await response.json();
     if (current === revision) {
       $('preview').src = result.image; $('preview').hidden = false; $('placeholder').hidden = true;
-      message(`${result.glyphs} glyphs · ${result.atlas.join(' × ')} draft atlas${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
+      message(`${result.glyphs} glyphs · ${result.kernings} kern pairs · ${result.atlas.join(' × ')} · ${result.packing} · ${Math.round(result.occupancy * 100)}% occupied${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
     }
   } catch (error) { if (current === revision) message(error.message, true); }
   finally { rendering = false; if (pending) preview(); }
@@ -54,6 +55,8 @@ function selectPreset() { style = structuredClone(presets[Number($('preset').val
 $('controls').addEventListener('submit', event => event.preventDefault());
 $('preset').addEventListener('change', selectPreset); $('reset').addEventListener('click', selectPreset);
 $('font').addEventListener('change', () => { style.font = $('font').value; delete style.variation; schedule(); });
+$('kerning').addEventListener('change', () => { style.kerning = $('kerning').checked; schedule(); });
+$('packing').addEventListener('change', () => { style.atlas_packing = $('packing').value; schedule(); });
 $('use-font').addEventListener('click', () => { const path = $('font-path').value.trim(); if (!path) return; style.font = path; delete style.variation; schedule(); });
 $('text').addEventListener('input', () => { style.preview = $('text').value.split('\n'); schedule(); });
 for (const [id, change] of [ ['top-color', value => style.fill.stops[0][1] = value], ['bottom-color', value => style.fill.stops.at(-1)[1] = value], ['outline-color', value => style.outline.color = value], ['background', value => style.preview_bg = value] ]) {

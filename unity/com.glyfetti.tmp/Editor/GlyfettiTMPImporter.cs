@@ -15,7 +15,8 @@ namespace Glyfetti.Editor
     public static class BitmapFontToTMP
     {
         [System.Serializable] class CharDef { public int id, x, y, w, h, xo, yo, xa; }
-        [System.Serializable] class FontDef { public string name; public int size, lineHeight, baseline, scaleW, scaleH; public CharDef[] chars; }
+        [System.Serializable] class KerningDef { public int first, second, amount; }
+        [System.Serializable] class FontDef { public string name; public int size, lineHeight, baseline, scaleW, scaleH; public CharDef[] chars; public KerningDef[] kernings; }
 
         [MenuItem("Tools/Glyfetti/Create TMP Font Asset")]
         static void CreateFromSelection()
@@ -40,6 +41,14 @@ namespace Glyfetti.Editor
                 if (c.id < 0 || c.id > 0x10FFFF || !ids.Add(c.id) || c.x < 0 || c.y < 0 ||
                     c.w < 0 || c.h < 0 || c.x + c.w > def.scaleW || c.y + c.h > def.scaleH)
                     throw new System.ArgumentException("Invalid or duplicate character in Glyfetti metadata.");
+            if (def.kernings != null)
+            {
+                var pairs = new HashSet<ulong>();
+                foreach (var pair in def.kernings)
+                    if (!ids.Contains(pair.first) || !ids.Contains(pair.second) ||
+                        !pairs.Add(((ulong)(uint)pair.first << 32) | (uint)pair.second))
+                        throw new System.ArgumentException("Invalid or duplicate kerning pair in Glyfetti metadata.");
+            }
             string dir = Path.GetDirectoryName(jsonPath).Replace('\\', '/');
             string texPath = $"{dir}/{Path.GetFileNameWithoutExtension(jsonPath)}.png";
 
@@ -90,6 +99,7 @@ namespace Glyfetti.Editor
             fa.faceInfo = face;
 
             uint idx = 0;
+            var glyphIndices = new Dictionary<int, uint>();
             foreach (var c in def.chars)
             {
                 // TextCore measures rect Y from the atlas BOTTOM, the JSON from the top
@@ -98,8 +108,20 @@ namespace Glyfetti.Editor
                 var glyph = new Glyph(idx, metrics, rect, 1f, 0);
                 fa.glyphTable.Add(glyph);
                 fa.characterTable.Add(new TMP_Character((uint)c.id, glyph));
+                glyphIndices.Add(c.id, idx);
                 idx++;
             }
+
+            // Map Unicode IDs to this asset's glyph indices, which TMP pairs require.
+            var featureTable = fa.fontFeatureTable;
+            featureTable.glyphPairAdjustmentRecords.Clear();
+            if (def.kernings != null)
+                foreach (var pair in def.kernings)
+                {
+                    var first = new TMP_GlyphAdjustmentRecord(glyphIndices[pair.first], new TMP_GlyphValueRecord(0, 0, pair.amount, 0));
+                    var second = new TMP_GlyphAdjustmentRecord(glyphIndices[pair.second], new TMP_GlyphValueRecord(0, 0, 0, 0));
+                    featureTable.glyphPairAdjustmentRecords.Add(new TMP_GlyphPairAdjustmentRecord(first, second));
+                }
 
             var mat = fa.material;
             bool ownsMaterial = mat != null && AssetDatabase.GetAssetPath(mat) == assetPath;

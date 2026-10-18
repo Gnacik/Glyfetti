@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "glyfetti"
-version = "0.1.1a1"
+version = "0.1.2a1"
 description = "Styled game text & bitmap font atlas generator: gradient, outline, 3D side, bevel, gloss, shadow and glow baked into PNG atlases with BMFont/JSON metrics and a Unity TextMeshPro importer."
 readme = "README.md"
 license = "MIT"

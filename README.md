@@ -46,6 +46,8 @@ and keeps the look in a text file you can tweak, diff and reuse.
 - 🤸 **Bouncy letters** (`jitter`): per-character rotation and offset for a hand-lettered look.
 - 🇵🇱 **Automatic diacritics:** missing Polish letters (ą ć ę ń ś ź ż) are composed from accents already in the
   font, so playful fonts like Chewy or Sniglet become usable for Polish text.
+- ↔️ **Font kerning:** horizontal pair spacing from GPOS and legacy `kern`, shared by previews, BMFont and Unity exports.
+- 🧩 **Compact atlases:** deterministic MaxRects packing with transparent gutters and a shelf fallback.
 - 📦 **Exports:** PNG atlas with alpha, BMFont text `.fnt` (Godot, libGDX, Phaser, Cocos, Defold…),
   JSON metrics, preview image.
 - 🎮 **Unity TextMeshPro package:** creates a TMP Font Asset from the atlas and ships a shader that keeps
@@ -87,11 +89,12 @@ glyfetti serve
 
 Open the printed `http://127.0.0.1:8765` URL (the browser opens automatically).
 Choose a preset and typeface, enter your text, then adjust size, outline, 3D depth,
-gloss, shadow, spacing and colors. The draft preview updates after a short pause;
+gloss, shadow, spacing and colors. Toggle font kerning and compare compact MaxRects
+packing against shelf rows. The draft preview updates after a short pause;
 **Export atlas ZIP** renders at the style's full supersampling quality.
 
 The ZIP includes the transparent atlas, BMFont and Unity metrics, preview images,
-an editable `.style.json` and `build-report.json` listing skipped characters.
+an editable `.style.json` and `build-report.json` listing skipped characters, kerning count, actual packing method and rectangle occupancy.
 Preview text characters are added to the exported character set. **Save style JSON**
 lets you continue later using the raw JSON panel or `glyfetti build`.
 For your own font, enter its absolute TTF/OTF path. Saved editor styles retain that
@@ -104,6 +107,27 @@ without generating images. `atlas_width` must fit every glyph including effects.
 fails with a clear message instead of silently cropping glyphs.
 
 ![Local style editor with live font preview](docs/images/editor.png)
+
+### Kerning and atlas packing
+
+Kerning is on by default. Glyfetti reads horizontal GPOS PairPos (explicit pairs,
+classes and extension lookups), or a legacy horizontal `kern` table when there is
+no applicable GPOS kern feature. Values follow variable-font axes and `condense`,
+are rounded to final pixels, and are applied in addition to `tracking`.
+The `.fnt` and JSON contain the same pairs used by the preview. In Unity, enable
+kerning/font features on the TextMeshPro component.
+
+Set `"kerning": false` to retain uniform spacing. `"kerning_script": "latn"` selects
+the default-language OpenType script; missing scripts fall back to `DFLT`.
+This exports horizontal advance pairs, not contextual shaping or ligatures;
+records requiring other placement adjustments are reported and skipped.
+
+`"atlas_packing": "maxrects"` is the default. It preserves glyph orientation and
+transparent gutters, tries compact power-of-two heights, and falls back to shelf
+if shelf produces a smaller atlas. Use `"atlas_packing": "shelf"` to retain rows.
+The atlas width remains controlled by `atlas_width`; smaller heights are not
+possible for every style. Pixel positions may change, so always update the atlas
+and metrics together.
 
 ## How a style is built
 
@@ -237,7 +261,7 @@ games. Check the license of any other font you use.
 - [ ] **Simple style layer** – ~12 knobs (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…) expanded into a full style
 - [ ] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
 - [x] `glyfetti serve` – local web UI with live preview and sliders
-- [ ] Kerning from the font's GPOS table, MaxRects atlas packing
+- [x] Horizontal GPOS / legacy kerning, MaxRects atlas packing
 - [ ] Whole-word "title" mode with a single merged outline
 - [ ] Palette extraction from a reference image
 

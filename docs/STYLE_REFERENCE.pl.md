@@ -109,6 +109,9 @@ Z jednego koloru bazowego (w przestrzeni OKLCH, żeby jasność była równa dla
 | `chars` | string | **wymagany** | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
 | `atlas_width` | px | 1024 | szerokość atlasu; wysokość dobierana jako potęga 2 |
 | `max_atlas_size` | px | 8192 | maksymalna szerokość i wysokość atlasu; przekroczenie limitu zgłasza błąd |
+| `atlas_packing` | `maxrects` / `shelf` | `maxrects` | kompaktowe pakowanie bez obrotu z wariantem awaryjnym w rzędach |
+| `kerning` | bool | `true` | eksport poziomych korekt par i ich użycie w podglądzie |
+| `kerning_script` | tag OpenType | `latn` | skrypt języka domyślnego dla GPOS kern; wariant awaryjny DFLT |
 | `tracking` | px | 0 | dodatkowy odstęp między literami; ujemny zbliża litery i zlewa obrysy |
 | `line_height` | mnożnik | 1.15 | wysokość linii względem metryk fontu |
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |
@@ -310,7 +313,7 @@ Każdy inny font TTF/OTF też zadziała. `glyfetti check-font <plik>` pokazuje, 
 ## 8. Znane ograniczenia
 
 - **Bitmapa:** tekst w grze nie powinien być większy niż `size`; na duże tytuły wygeneruj osobny atlas z większym `size`.
-- **Brak kerningu** (planowany odczyt z tabeli GPOS fontu).
+- **Kerning obejmuje poziome korekty szerokości par**; kształtowanie kontekstowe, ligatury i inne korekty pozycji wymagają silnika składu.
 - **Jitter jest przypisany do znaku**, więc powtarzające się litery wyglądają identycznie.
 - **Obrysy liter nachodzą na siebie** przy mocno ujemnym `tracking`; wspólny obrys całego słowa wymaga renderowania napisu w całości (planowany tryb `title`).
 - **Efekty TMP z Inspektora** (Outline, Underlay) nie działają z kolorowym atlasem – efekty są już „wypalone”.

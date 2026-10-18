@@ -14,6 +14,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
+from .packing import pack_atlas, shelf_pack
+from .kerning import read_kerning
 
 
 def hex2rgb(h):
@@ -139,24 +141,6 @@ def style_glyph(m, st, S):
 
     over(out, np.clip(rgb, 0, 1), inner)
     return out
-
-
-def shelf_pack(sizes, width, pad, max_height=8192):
-    x = y = row_h = 0
-    pos = []
-    for w, h in sizes:
-        if w + 2 * pad > width:
-            raise ValueError(f'atlas_width: glyph width {w} needs at least {w + 2 * pad}px; increase atlas_width')
-        if x + w + pad > width:
-            x, y, row_h = 0, y + row_h + pad, 0
-        pos.append((x + pad, y + pad))
-        x += w + pad
-        row_h = max(row_h, h)
-    height = y + row_h + 2 * pad
-    height = 1 << math.ceil(math.log2(max(height, 1)))
-    if height > max_height:
-        raise ValueError(f'max_atlas_size: atlas height {height}px exceeds {max_height}px; increase atlas_width, reduce size or use fewer characters')
-    return pos, height
 
 
 def resolve_font(st, base):
@@ -314,7 +298,9 @@ def build(style_path, out_dir=None, preview_only=False):
         adv = font.getlength(ch) / S * st.get('condense', 1.0) + st.get('embolden', 0) * 2 + st.get('tracking', 0)
         glyphs.append(dict(ch=ch, img=img, ox=ox, oy=oy, adv=adv))
 
-    pos, H = shelf_pack([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum)
+    pos, H, packing = pack_atlas([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum, st.get('atlas_packing', 'maxrects'))
+    kernings = read_kerning(font_path, chars + [' '], size, st.get('condense', 1), st.get('variation'), st.get('kerning_script', 'latn')) if st.get('kerning', True) else []
+    pair_offsets = {(pair['first'], pair['second']): pair['amount'] for pair in kernings}
     W = st.get('atlas_width', 1024)
     atlas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     base_y = round(asc / S + st['outline']['width'])
@@ -332,12 +318,15 @@ def build(style_path, out_dir=None, preview_only=False):
         lines.append(f"char id={ord(g['ch'])} x={x} y={y} width={w} height={h} "
                      f"xoffset={g['xoff']} yoffset={g['yoff']} xadvance={round(g['adv'])} page=0 chnl=15")
 
+    lines.append(f'kernings count={len(kernings)}')
+    lines.extend(f"kerning first={pair['first']} second={pair['second']} amount={pair['amount']}" for pair in kernings)
+
     out = Path(out_dir) if out_dir else base / 'out'
     out.mkdir(parents=True, exist_ok=True)
     atlas.save(out / f'{name}.png')
     (out / f'{name}.fnt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     # JSON dla importera Unity (TextMeshPro)
-    jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H,
+    jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +
                    [{'id': ord(g['ch']), 'x': g['x'], 'y': g['y'], 'w': g['img'].size[0], 'h': g['img'].size[1],
                      'xo': g['xoff'], 'yo': g['yoff'], 'xa': round(g['adv'])} for g in glyphs]}
@@ -351,7 +340,10 @@ def build(style_path, out_dir=None, preview_only=False):
     right, bottom = 0, line_h * len(sample)
     for i, text in enumerate(sample):
         cursor = 0
+        previous = None
         for char in text:
+            if previous is not None:
+                cursor += pair_offsets.get((ord(previous), ord(char)), 0)
             if char in gm:
                 glyph = gm[char]
                 x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
@@ -361,6 +353,7 @@ def build(style_path, out_dir=None, preview_only=False):
                 cursor += round(glyph['adv'])
             else:
                 cursor += space_adv
+            previous = char if char in gm or char == ' ' else None
         left, right = min(left, cursor), max(right, cursor)
     pw, ph = right - left + 80, bottom - top + 60
     if pw * ph > 64 * 1024 * 1024:
@@ -375,6 +368,7 @@ def build(style_path, out_dir=None, preview_only=False):
     sheet = Image.new('RGBA', (W, H), (255, 255, 255, 255))
     sheet.alpha_composite(atlas)
     sheet.save(out / f'{name}_atlas_on_white.png')
-    return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped}
+    return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
+            'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H)}
 
 

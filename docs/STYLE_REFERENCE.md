@@ -109,6 +109,9 @@ From a single base color (in OKLCH space, so lightness stays even across hues):
 | `chars` | string | **required** | character set for the atlas (duplicates and spaces are skipped; space is always added) |
 | `atlas_width` | px | 1024 | atlas width; height is picked as a power of 2 |
 | `max_atlas_size` | px | 8192 | maximum atlas width and height; oversized exports fail without cropping |
+| `atlas_packing` | `maxrects` / `shelf` | `maxrects` | non-rotating compact packing with a shelf fallback |
+| `kerning` | bool | `true` | export horizontal advance pairs and apply them in previews |
+| `kerning_script` | OpenType tag | `latn` | default-language script for GPOS kern; falls back to DFLT |
 | `tracking` | px | 0 | extra letter spacing; negative pulls letters together and merges outlines |
 | `line_height` | multiplier | 1.15 | line height relative to font metrics |
 | `condense` | 0.5–1.5 | 1.0 | horizontal glyph scaling (condensed < 1) |
@@ -310,7 +313,7 @@ Any other TTF/OTF font works too. `glyfetti check-font <file>` lists missing cha
 ## 8. Known limitations
 
 - **Bitmap:** in-game text shouldn't be larger than `size`; for large titles, generate a separate atlas with a bigger `size`.
-- **No kerning** yet (reading the font's GPOS table is planned).
+- **Kerning is horizontal advance-only**; contextual positioning, ligatures and other placement corrections require a shaping engine.
 - **Jitter is tied to the character**, so repeated letters look identical.
 - **Letter outlines overlap** at strongly negative `tracking`; a shared outline for a whole word requires rendering the text as a whole (planned `title` mode).
 - **TMP Inspector effects** (Outline, Underlay) don't work with a color atlas – the effects are already baked in.

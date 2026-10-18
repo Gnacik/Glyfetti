@@ -124,6 +124,25 @@ lokalnie. Serwer zatrzymasz przez Ctrl+C.
 zgłasza błąd zamiast obcinać litery. Parametr `max_atlas_size` ogranicza szerokość
 i wysokość tekstury (domyślnie 8192 px).
 
+### Kerning i pakowanie atlasu
+
+Kerning jest domyślnie włączony: odstępy par liter pochodzą z tabel GPOS PairPos
+(pary, klasy i rozszerzenia) lub starszej tabeli `kern`. Uwzględniają osie fontu
+zmiennego i `condense`, są zaokrąglane do pikseli i działają obok `tracking`.
+Podgląd, BMFont i JSON dla Unity korzystają z tych samych wartości. W komponencie
+TextMeshPro włącz kerning / font features.
+
+`"kerning": false` wyłącza korekty. `"kerning_script": "latn"` wybiera skrypt
+OpenType dla języka domyślnego; gdy go brakuje, używany jest `DFLT`. Obsługiwane
+są poziome korekty szerokości par, bez ligatur i kształtowania kontekstowego.
+Rekordy wymagające innych przesunięć są zgłaszane i pomijane.
+
+Domyślne `"atlas_packing": "maxrects"` układa glify bez obrotu, zachowuje marginesy
+i próbuje zmniejszyć wysokość tekstury. Jeśli układ w rzędach jest mniejszy,
+używany jest automatycznie. `"atlas_packing": "shelf"` wymusza rzędy. Szerokość
+nadal ustawia `atlas_width`; nie każdy styl pozwala zmniejszyć wysokość. Zawsze
+aktualizuj PNG razem z metrykami, bo pozycje glifów mogą się zmienić.
+
 ## Unity (TextMeshPro)
 
 **Package Manager → Add package from git URL:**
@@ -172,7 +191,7 @@ w grach komercyjnych.
 - [ ] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
 - [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
 - [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
-- [ ] Kerning z tabeli GPOS, pakowanie atlasu MaxRects
+- [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects
 - [ ] Tryb „title”: całe słowo ze wspólnym obrysem
 - [ ] Wyciąganie palety z obrazka referencyjnego
 

@@ -55,3 +55,9 @@ def test_editor_rejects_foreign_hosts_and_unauthenticated_writes():
         finally:
             server.shutdown()
             worker.join(timeout=5)
+
+
+def test_only_one_editor_can_own_a_port():
+    with make_server(0) as server:
+        with pytest.raises(OSError):
+            make_server(server.server_port)

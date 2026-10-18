@@ -13,3 +13,5 @@ https://github.com/Gnacik/glyfetti.git?path=/unity/com.glyfetti.tmp
 Status: **experimental** – please report your Unity/TMP version in issues if something breaks.
 
 Reimporting the same name in the same folder updates the existing font asset and its material in place, preserving GUIDs and scene references. Import checks atlas dimensions and glyph rectangles before changing the font asset.
+
+Kerning pairs from JSON are mapped to TMP glyph indices and replace the previous feature table entries on reimport. Keep kerning/font features enabled on your TextMeshPro components. Old JSON files without a `kernings` array remain supported.

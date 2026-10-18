@@ -519,6 +519,25 @@
       "maximum": 8192,
       "default": 8192,
       "description": "Maximum atlas width and height; oversized builds fail without cropping."
+    },
+    "kerning": {
+      "type": "boolean",
+      "default": true,
+      "description": "Export horizontal pair kerning and apply it to previews."
+    },
+    "kerning_script": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9 ]{4}$",
+      "default": "latn",
+      "description": "OpenType script for the default language kern feature; falls back to DFLT."
+    },
+    "atlas_packing": {
+      "enum": [
+        "maxrects",
+        "shelf"
+      ],
+      "default": "maxrects",
+      "description": "Atlas packing without glyph rotation. MaxRects falls back to shelf if smaller."
     }
   },
   "additionalProperties": false

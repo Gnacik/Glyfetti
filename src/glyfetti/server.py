@@ -4,8 +4,10 @@ import copy
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 import json
+import os
 from pathlib import Path
 import secrets
+import socket
 import tempfile
 import threading
 import webbrowser
@@ -16,6 +18,17 @@ from .validation import DATA_DIR, validate_style
 
 WEB_DIR = Path(__file__).parent / 'web'
 MAX_BODY = 256 * 1024
+
+
+class LocalHTTPServer(HTTPServer):
+    # SO_REUSEADDR on Windows allows two live servers to bind the same port,
+    # leaving the older renderer answering requests after a restart.
+    allow_reuse_address = os.name != 'nt'
+
+    def server_bind(self):
+        if os.name == 'nt':
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
 
 
 def catalog():
@@ -43,13 +56,14 @@ def render_style(style, preview=False):
         if preview:
             image = (root / 'out' / f"{result['name']}_preview.png").read_bytes()
             return {'image': 'data:image/png;base64,' + base64.b64encode(image).decode(),
-                    'glyphs': result['glyphs'], 'atlas': result['atlas'], 'skipped': result['skipped']}
+                    'glyphs': result['glyphs'], 'atlas': result['atlas'], 'skipped': result['skipped'],
+                    'kernings': result['kernings'], 'packing': result['packing'], 'occupancy': result['occupancy']}
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as target:
             for path in sorted((root / 'out').iterdir()):
                 target.write(path, path.name)
             target.writestr(f"{style['name']}.style.json", json.dumps(original, ensure_ascii=False, indent=2) + '\n')
-            target.writestr('build-report.json', json.dumps({'glyphs': result['glyphs'], 'atlas': result['atlas'], 'skipped': result['skipped']}, ensure_ascii=False, indent=2) + '\n')
+            target.writestr('build-report.json', json.dumps({key: result[key] for key in ('glyphs', 'atlas', 'skipped', 'kernings', 'packing', 'occupancy')}, ensure_ascii=False, indent=2) + '\n')
         return archive.getvalue()
 
 
@@ -108,7 +122,7 @@ def make_server(port=8765):
             except Exception:
                 self.respond(500, {'error': 'Rendering failed. Check the font and style parameters.'})
 
-    return HTTPServer(('127.0.0.1', port), Handler)
+    return LocalHTTPServer(('127.0.0.1', port), Handler)
 
 
 def serve(port=8765, open_browser=True):
