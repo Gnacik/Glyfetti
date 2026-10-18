@@ -161,3 +161,15 @@ def test_gallery_supports_transparency_without_writing_into_presets(style, tmp_p
     make_gallery(presets, output)
     assert output.is_file()
     assert not (presets / 'out').exists()
+
+
+def test_integer_json_numbers_and_fractional_outlines_export_integer_metrics(style, tmp_path):
+    style.update(size=24.0, supersample=1.0, atlas_width=256.0, jitter={'seed': 11.0, 'rotate': 1})
+    style['outline']['width'] = 1.5
+    path = tmp_path / 'style.json'
+    path.write_text(json.dumps(style), 'utf-8')
+    build(path, tmp_path / 'out')
+    metadata = json.loads((tmp_path / 'out/test.json').read_text())
+    assert isinstance(metadata['size'], int)
+    assert isinstance(metadata['baseline'], int)
+    assert isinstance(metadata['scaleW'], int)

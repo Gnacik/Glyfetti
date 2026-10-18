@@ -317,7 +317,7 @@ def build(style_path, out_dir=None, preview_only=False):
     pos, H = shelf_pack([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum)
     W = st.get('atlas_width', 1024)
     atlas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    base_y = round(asc / S) + st['outline']['width']
+    base_y = round(asc / S + st['outline']['width'])
     line_h = round((asc + desc) / S * st.get('line_height', 1.15))
     name = st['name']
     lines = [f'info face="{name}" size={size} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=2,2',
