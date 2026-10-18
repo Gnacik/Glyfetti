@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3a1
+
+- Add `glyfetti title`: merge letter masks before applying one shared effect stack,
+  then export a cropped transparent PNG and a separate background preview.
+- Support multiline alignment, configurable transparent margins, kerning, variable
+  fonts, condense, jitter, missing-character reports and automatic Polish diacritics.
+- Add title mode, alignment, margin controls and direct PNG downloads to the editor.
+- Share font configuration and plain glyph shaping between atlas and title modes.
+- Reject empty titles and oversized whole-title effect buffers with readable errors.
+- Add regression coverage for shared outlines, alignment, transparency, CLI and API
+  exports, Polish characters and title previews for all bundled presets.
+
 ## 0.1.2a1
 
 - Add horizontal GPOS PairPos kerning (explicit pairs, classes and extension

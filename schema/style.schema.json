@@ -538,6 +538,26 @@
       ],
       "default": "maxrects",
       "description": "Atlas packing without glyph rotation. MaxRects falls back to shelf if smaller."
+    },
+    "title": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "default": "center"
+        },
+        "padding": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200,
+          "default": 8
+        }
+      }
     }
   },
   "additionalProperties": false

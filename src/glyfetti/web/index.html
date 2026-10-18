@@ -8,6 +8,7 @@
 <aside aria-label="Style controls">
   <div class="intro"><span class="eyebrow">A LITTLE TYPE MAGIC</span><h1>Make letters <br>worth looking at.</h1><p>Pick a look. Make it yours. Take it into your game.</p></div>
   <form id="controls">
+    <label for="output-mode">Make something for your game</label><select id="output-mode"><option value="atlas">Font atlas · reusable alphabet</option><option value="title">Title PNG · shared effects</option></select>
     <label for="preset">01 / Starting point</label><select id="preset"></select>
     <label for="font">Typeface</label><select id="font"></select>
     <details><summary>Use your own font</summary><label for="font-path">Absolute TTF / OTF path on this computer</label><input id="font-path" type="text" placeholder="C:\Fonts\MyFont.ttf"><button type="button" id="use-font">Use font</button></details>
@@ -16,7 +17,8 @@ Score: 2 560</textarea>
     <fieldset><legend>03 / Shape & finish</legend><div id="sliders"></div></fieldset>
     <div class="colors"><label>Top fill<input id="top-color" type="color"></label><label>Bottom fill<input id="bottom-color" type="color"></label><label>Outline<input id="outline-color" type="color"></label></div>
     <label class="toggle" for="kerning"><input id="kerning" type="checkbox" checked>Use font kerning</label>
-    <label for="packing">Atlas packing</label><select id="packing"><option value="maxrects">MaxRects · compact</option><option value="shelf">Shelf · rows</option></select>
+    <div id="atlas-options"><label for="packing">Atlas packing</label><select id="packing"><option value="maxrects">MaxRects · compact</option><option value="shelf">Shelf · rows</option></select></div>
+    <div id="title-options" hidden><label for="title-align">Title alignment</label><select id="title-align"><option value="left">Left</option><option value="center" selected>Center</option><option value="right">Right</option></select><label for="title-padding">Transparent margin (px)</label><input id="title-padding" type="number" min="0" max="200" value="8"></div>
     <button type="button" id="reset" class="secondary">Reset preset</button>
   </form>
 </aside>
@@ -24,9 +26,9 @@ Score: 2 560</textarea>
   <div class="preview-heading"><div><span class="eyebrow">THE PREVIEW</span><h2>Your next great title.</h2></div><label class="background">Background<input type="color" id="background" value="#8b5a2b"></label></div>
   <div class="preview-stage" id="stage"><img id="preview" alt="Rendered preview of your styled text" hidden><span id="placeholder">Your letters are warming up…</span></div>
   <div class="preview-foot"><p id="status" role="status" aria-live="polite">Loading presets…</p><span>Draft preview · export uses full quality</span></div>
-  <div class="export"><div><span class="eyebrow">READY FOR YOUR GAME</span><h2>From playground to production.</h2><p>Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.</p></div><div class="export-actions"><button id="export" disabled>Export atlas ZIP ↗</button><button id="save-style" class="secondary" disabled>Save style JSON</button></div></div>
+  <div class="export"><div><span class="eyebrow">READY FOR YOUR GAME</span><h2>From playground to production.</h2><p id="export-description">Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.</p></div><div class="export-actions"><button id="export" disabled>Export atlas ZIP ↗</button><button id="save-style" class="secondary" disabled>Save style JSON</button></div></div>
   <details class="advanced"><summary>Edit raw style JSON</summary><p>Use advanced options or paste a saved style. Font paths must be absolute.</p><label for="json">Style definition</label><textarea id="json" rows="16" spellcheck="false"></textarea><button id="apply-json" type="button">Apply JSON</button></details>
-  <p class="note">Preview text characters are added to the exported character set. Missing characters are reported below the preview.</p>
+  <p class="note" id="output-note">Preview text characters are added to the exported character set. Missing characters are reported below the preview.</p>
 </section>
 </main><footer>GLYFETTI / Colorful type. Consistent alphabets. <span>Made for the playful side of games.</span></footer>
 </body></html>

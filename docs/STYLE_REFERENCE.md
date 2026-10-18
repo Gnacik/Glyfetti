@@ -119,6 +119,7 @@ From a single base color (in OKLCH space, so lightness stays even across hues):
 | `jitter` | object or `null` | `null` | "bouncy" letters, see 3.9 |
 | `preview` | list of strings | 3 test lines | texts for `*_preview.png` |
 | `preview_bg` | hex or `"transparent"` | `#ffffff` | preview background (preview only; the atlas is always transparent) |
+| `title` | object | `{ "align": "center", "padding": 8 }` | whole-title PNG options; align: left/center/right, padding: 0–200 final pixels |
 | `auto_diacritics` | bool | `true` | compose missing Polish letters from accents present in the font |
 
 ### 3.2 `fill` – fill (letter front)
@@ -315,5 +316,5 @@ Any other TTF/OTF font works too. `glyfetti check-font <file>` lists missing cha
 - **Bitmap:** in-game text shouldn't be larger than `size`; for large titles, generate a separate atlas with a bigger `size`.
 - **Kerning is horizontal advance-only**; contextual positioning, ligatures and other placement corrections require a shaping engine.
 - **Jitter is tied to the character**, so repeated letters look identical.
-- **Letter outlines overlap** at strongly negative `tracking`; a shared outline for a whole word requires rendering the text as a whole (planned `title` mode).
+- **Letter outlines overlap** at strongly negative `tracking`; use `glyfetti title` for a shared outline across the complete text.
 - **TMP Inspector effects** (Outline, Underlay) don't work with a color atlas – the effects are already baked in.

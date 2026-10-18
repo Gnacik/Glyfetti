@@ -119,6 +119,7 @@ Z jednego koloru bazowego (w przestrzeni OKLCH, żeby jasność była równa dla
 | `jitter` | obiekt lub `null` | `null` | „skaczące” litery, patrz 3.9 |
 | `preview` | lista stringów | 3 linie testowe | teksty do podglądu `*_preview.png` |
 | `preview_bg` | HEX lub `"transparent"` | `#ffffff` | tło podglądu (tylko podgląd, atlas jest zawsze przezroczysty) |
+| `title` | obiekt | `{ "align": "center", "padding": 8 }` | opcje PNG całego napisu; align: left/center/right, padding: 0–200 pikseli końcowych |
 | `auto_diacritics` | bool | `true` | składanie brakujących polskich liter z akcentów zawartych w foncie |
 
 ### 3.2 `fill` – wypełnienie (przód litery)
@@ -315,5 +316,5 @@ Każdy inny font TTF/OTF też zadziała. `glyfetti check-font <plik>` pokazuje, 
 - **Bitmapa:** tekst w grze nie powinien być większy niż `size`; na duże tytuły wygeneruj osobny atlas z większym `size`.
 - **Kerning obejmuje poziome korekty szerokości par**; kształtowanie kontekstowe, ligatury i inne korekty pozycji wymagają silnika składu.
 - **Jitter jest przypisany do znaku**, więc powtarzające się litery wyglądają identycznie.
-- **Obrysy liter nachodzą na siebie** przy mocno ujemnym `tracking`; wspólny obrys całego słowa wymaga renderowania napisu w całości (planowany tryb `title`).
+- **Obrysy liter nachodzą na siebie** przy mocno ujemnym `tracking`; wspólny obrys całego napisu uzyskasz poleceniem `glyfetti title`.
 - **Efekty TMP z Inspektora** (Outline, Underlay) nie działają z kolorowym atlasem – efekty są już „wypalone”.

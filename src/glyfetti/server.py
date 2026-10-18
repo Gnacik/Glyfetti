@@ -42,7 +42,9 @@ def catalog():
             'fonts': [str(p.resolve()) for p in sorted(FONTS_DIR.glob('*.ttf'))]}
 
 
-def render_style(style, preview=False):
+def render_style(style, preview=False, mode='atlas'):
+    if mode not in ('atlas', 'title'):
+        raise ValueError('output mode must be atlas or title')
     style = copy.deepcopy(validate_style(style))
     original = copy.deepcopy(style)
     if preview:
@@ -52,6 +54,14 @@ def render_style(style, preview=False):
         root = Path(folder)
         source = root / 'style.json'
         source.write_text(json.dumps(style, ensure_ascii=False), 'utf-8')
+        if mode == 'title':
+            from .title import build_title
+            result = build_title(source, root / 'out' / f"{style['name']}_title.png")
+            if not preview:
+                return result['out'].read_bytes()
+            image = result['preview'].read_bytes()
+            return {'mode': 'title', 'image': 'data:image/png;base64,' + base64.b64encode(image).decode(),
+                    **{key: result[key] for key in ('size', 'glyphs', 'kernings', 'skipped', 'lines')}}
         result = build(source, root / 'out', preview_only=preview)
         if preview:
             image = (root / 'out' / f"{result['name']}_preview.png").read_bytes()
@@ -105,7 +115,7 @@ def make_server(port=8765):
         def do_POST(self):
             if not self.allowed() or not secrets.compare_digest(self.headers.get('X-Glyfetti-Token', ''), token):
                 return self.respond(403, {'error': 'Invalid editor session. Reload the page.'})
-            if self.path not in ('/api/preview', '/api/export', '/api/validate'):
+            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate'):
                 return self.respond(404, {'error': 'Not found'})
             try:
                 length = int(self.headers.get('Content-Length', '0'))
@@ -115,8 +125,10 @@ def make_server(port=8765):
                 if self.path == '/api/validate':
                     validate_style(style)
                     return self.respond(200, {'valid': True})
-                result = render_style(style, preview=self.path == '/api/preview')
-                self.respond(200, result, 'application/zip' if isinstance(result, bytes) else 'application/json')
+                title = self.path.startswith('/api/title-')
+                result = render_style(style, preview=self.path.endswith('preview'), mode='title' if title else 'atlas')
+                mime = ('image/png' if title else 'application/zip') if isinstance(result, bytes) else 'application/json'
+                self.respond(200, result, mime)
             except (ValueError, OSError, KeyError, TypeError) as error:
                 self.respond(400, {'error': str(error)})
             except Exception:

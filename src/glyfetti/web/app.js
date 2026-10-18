@@ -1,5 +1,12 @@
 'use strict';
 const $ = id => document.getElementById(id);
+function titleMode() { return $('output-mode').value === 'title'; }
+function syncMode() {
+  const title = titleMode(); $('atlas-options').hidden = title; $('title-options').hidden = !title;
+  $('export').textContent = title ? 'Export title PNG ↗' : 'Export atlas ZIP ↗';
+  $('export-description').textContent = title ? 'One transparent image. A shared outline, shadow and 3D finish across your whole title.' : 'Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.';
+  $('output-note').textContent = title ? 'Title effects and gradients span the complete text. The preview background is not included in your PNG. Save the style JSON to edit this title later.' : 'Preview text characters are added to the exported character set. Missing characters are reported below the preview.';
+}
 let presets = [], style, token, timer, rendering = false, pending = false, exporting = false, revision = 0;
 const knobs = [
   ['size', 'Size', 16, 180, 1, 'px'], ['outline.width', 'Outline', 0, 20, .5, 'px'],
@@ -12,6 +19,7 @@ function set(path, value) { const keys = path.split('.'); let node = style; for 
 function message(text, error = false) { $('status').textContent = text; $('status').dataset.error = String(error); }
 function download(data, name) { const url = URL.createObjectURL(data), link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); }
 function sync() {
+  $('title-align').value = style.title?.align || 'center'; $('title-padding').value = style.title?.padding ?? 8; syncMode();
   $('kerning').checked = style.kerning !== false; $('packing').value = style.atlas_packing || 'maxrects';
   $('font').value = style.font; $('text').value = (style.preview || ['Level Complete!']).join('\n');
   $('background').value = style.preview_bg === 'transparent' ? '#f5f1e8' : (style.preview_bg || '#ffffff');
@@ -43,10 +51,11 @@ async function preview() {
   if (rendering || exporting || !pending) return;
   rendering = true; pending = false; const current = revision; message('Rendering your letters…');
   try {
-    const response = await request('preview', style), result = await response.json();
+    const response = await request(titleMode() ? 'title-preview' : 'preview', style), result = await response.json();
     if (current === revision) {
       $('preview').src = result.image; $('preview').hidden = false; $('placeholder').hidden = true;
-      message(`${result.glyphs} glyphs · ${result.kernings} kern pairs · ${result.atlas.join(' × ')} · ${result.packing} · ${Math.round(result.occupancy * 100)}% occupied${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
+      const info = result.mode === 'title' ? `${result.size.join(' × ')} PNG · ${result.lines} ${result.lines === 1 ? 'line' : 'lines'} · shared effects` : `${result.glyphs} glyphs · ${result.kernings} kern pairs · ${result.atlas.join(' × ')} · ${result.packing} · ${Math.round(result.occupancy * 100)}% occupied`;
+      message(`${info}${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
     }
   } catch (error) { if (current === revision) message(error.message, true); }
   finally { rendering = false; if (pending) preview(); }
@@ -54,6 +63,9 @@ async function preview() {
 function selectPreset() { style = structuredClone(presets[Number($('preset').value)]); sync(); schedule(); }
 $('controls').addEventListener('submit', event => event.preventDefault());
 $('preset').addEventListener('change', selectPreset); $('reset').addEventListener('click', selectPreset);
+$('output-mode').addEventListener('change', () => { syncMode(); schedule(); });
+$('title-align').addEventListener('change', () => { style.title ||= {}; style.title.align = $('title-align').value; schedule(); });
+$('title-padding').addEventListener('input', () => { style.title ||= {}; style.title.padding = Number($('title-padding').value); schedule(); });
 $('font').addEventListener('change', () => { style.font = $('font').value; delete style.variation; schedule(); });
 $('kerning').addEventListener('change', () => { style.kerning = $('kerning').checked; schedule(); });
 $('packing').addEventListener('change', () => { style.atlas_packing = $('packing').value; schedule(); });
@@ -65,8 +77,8 @@ for (const [id, change] of [ ['top-color', value => style.fill.stops[0][1] = val
 function exportStyle() { const result = structuredClone(style); result.chars = [...new Set(result.chars + (result.preview || []).join(''))].join(''); return result; }
 $('save-style').addEventListener('click', () => download(new Blob([JSON.stringify(exportStyle(), null, 2) + '\n'], { type: 'application/json' }), `${style.name}.style.json`));
 $('export').addEventListener('click', async () => {
-  exporting = true; $('export').disabled = true; const snapshot = exportStyle(); message('Building full-quality atlas. This can take a minute…');
-  try { const response = await request('export', snapshot); download(await response.blob(), `${snapshot.name}.zip`); message('Atlas exported. Your ZIP includes the editable style.'); }
+  exporting = true; $('export').disabled = true; const snapshot = exportStyle(), title = titleMode(); message(title ? 'Rendering your title at full quality…' : 'Building full-quality atlas. This can take a minute…');
+  try { const response = await request(title ? 'title-export' : 'export', snapshot); download(await response.blob(), title ? `${snapshot.name}_title.png` : `${snapshot.name}.zip`); message(title ? 'Title exported with a transparent background.' : 'Atlas exported. Your ZIP includes the editable style.'); }
   catch (error) { message(error.message, true); }
   finally { exporting = false; $('export').disabled = false; if (pending) preview(); }
 });

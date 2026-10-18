@@ -50,6 +50,10 @@ def test_editor_rejects_foreign_hosts_and_unauthenticated_writes():
             request = Request(url + '/api/preview', data=json.dumps(small_style()).encode(), headers={'X-Glyfetti-Token': data['token']})
             with urlopen(request) as response:
                 assert json.load(response)['glyphs'] == 2
+            request = Request(url + '/api/title-export', data=json.dumps(small_style()).encode(), headers={'X-Glyfetti-Token': data['token']})
+            with urlopen(request) as response:
+                assert response.headers['Content-Type'] == 'image/png'
+                assert response.read().startswith(b'\x89PNG\r\n\x1a\n')
             with urlopen(url + '/') as response:
                 assert b'Type playground' in response.read()
         finally:

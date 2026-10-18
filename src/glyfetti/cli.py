@@ -13,6 +13,12 @@ def main(argv=None):
     b.add_argument('-o', '--out', help='output directory (default: <style dir>/out)')
     b.add_argument('--preview-only', action='store_true', help='render only the preview text (fast)')
 
+    title = sub.add_parser('title', help='render whole text with shared effects into a transparent PNG')
+    title.add_argument('style', help='style JSON; uses its preview text unless --text is given')
+    title.add_argument('--text', help='title text; actual line breaks create multiple lines')
+    title.add_argument('--align', choices=['left', 'center', 'right'])
+    title.add_argument('-o', '--out', help='output PNG (default: <style dir>/out/<name>_title.png)')
+
     g = sub.add_parser('gallery', help='render all presets in a folder into one gallery PNG')
     g.add_argument('folder', nargs='?')
     g.add_argument('-o', '--out', default='gallery.png')
@@ -50,6 +56,12 @@ def run(a):
         for filename in a.style:
             validate_style(json.loads(Path(filename).read_text('utf-8')))
             print(f'{filename}: valid')
+    elif a.cmd == 'title':
+        from .title import build_title
+        result = build_title(a.style, output=a.out, text=a.text, align=a.align)
+        print(f"{result['name']}: title {result['size'][0]}x{result['size'][1]} -> {result['out']}")
+        if result['skipped']:
+            print(f"missing characters: {result['skipped']}", file=sys.stderr)
     elif a.cmd == 'build':
         from .engine import build
         for s in a.style:

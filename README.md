@@ -129,6 +129,44 @@ The atlas width remains controlled by `atlas_width`; smaller heights are not
 possible for every style. Pixel positions may change, so always update the atlas
 and metrics together.
 
+## Whole-title PNG export
+
+```bash
+glyfetti title presets/honey_gold.json --text "Level Complete!" -o victory.png
+```
+
+Title mode merges the plain letter shapes **before** applying outline, 3D side,
+bevel, gloss and shadow. Overlapping letters share one continuous outline instead
+of painting dark seams across each other. The gradient and highlight span the
+complete title. Kerning, tracking, condense, variable fonts, Polish diacritics and
+jitter use the same shaping settings as the atlas renderer.
+
+Without `--text`, the command uses the style's `preview` lines. Actual newline
+characters in `--text` create multiple lines. `--align left|center|right` controls
+line alignment (default: center). Store defaults in your style:
+
+```json
+"title": { "align": "center", "padding": 8 }
+```
+
+The output is a cropped **transparent RGBA PNG** with the specified margin.
+A separate `<output_stem>_preview.png` uses `preview_bg`. Without `-o`, files go to
+`<style_folder>/out/<name>_title.png` and its preview. No font atlas or font metrics
+are needed for a static title image.
+
+In the editor, choose **Title PNG · shared effects**, adjust alignment and margin,
+then click **Export title PNG**. Use **Save style JSON** to keep the editable settings;
+the same style can still generate an atlas. The output-mode selector is a session
+choice; saved JSON works with either `glyfetti title` or `glyfetti build`.
+
+Empty or unsupported-only titles are rejected. Missing characters in otherwise
+renderable text are reported and occupy a space. Very large render buffers are
+rejected before allocating the complete effect canvas; split long text into lines
+or reduce font size or supersampling. This mode shares the atlas renderer's
+horizontal layout limitations; it does not provide contextual script shaping.
+
+![Whole-title PNG with shared effects](docs/images/title.png)
+
 ## How a style is built
 
 <p align="center">
@@ -202,6 +240,8 @@ natively or through a small loader.
 ## Command line
 
 ```text
+glyfetti title STYLE.json [--text "Level Complete!"] [--align left|center|right] [-o title.png]
+
 glyfetti serve [--port 8765] [--no-browser]
 
 glyfetti validate STYLE.json [STYLE2.json …]
@@ -262,7 +302,7 @@ games. Check the license of any other font you use.
 - [ ] **MCP server** – let Claude, Cursor and other assistants create, preview and refine styles in chat
 - [x] `glyfetti serve` – local web UI with live preview and sliders
 - [x] Horizontal GPOS / legacy kerning, MaxRects atlas packing
-- [ ] Whole-word "title" mode with a single merged outline
+- [x] Whole-word "title" mode with a single merged outline
 - [ ] Palette extraction from a reference image
 
 ## Contributing

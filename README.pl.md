@@ -143,6 +143,42 @@ używany jest automatycznie. `"atlas_packing": "shelf"` wymusza rzędy. Szeroko�
 nadal ustawia `atlas_width`; nie każdy styl pozwala zmniejszyć wysokość. Zawsze
 aktualizuj PNG razem z metrykami, bo pozycje glifów mogą się zmienić.
 
+## Gotowy napis do PNG
+
+```bash
+glyfetti title presets/honey_gold.json --text "Level Complete!" -o victory.png
+```
+
+Tryb `title` łączy kształty liter przed nałożeniem efektów. Obrys, bok 3D, cień,
+połysk i gradient obejmują cały napis, więc zachodzące litery nie mają ciemnych
+szwów między sobą. Kerning, odstępy, zwężanie, osie fontu, polskie znaki i jitter
+korzystają z tych samych ustawień co atlas.
+
+Bez `--text` używany jest tekst z `preview`. Rzeczywiste znaki nowej linii w `--text`
+tworzą kolejne wiersze. `--align left|center|right` ustawia wyrównanie (domyślnie
+środek). Domyślne opcje można zapisać w stylu:
+
+```json
+"title": { "align": "center", "padding": 8 }
+```
+
+Eksport to przycięty PNG RGBA z przezroczystością i zadanym marginesem. Osobny
+`<nazwa_pliku>_preview.png` pokazuje tło z `preview_bg`. Bez `-o` pliki trafiają do
+`out/<name>_title.png` i odpowiedniego podglądu obok stylu. Do statycznego napisu
+nie potrzeba atlasu ani metryk fontu.
+
+W edytorze wybierz **Title PNG · shared effects**, ustaw wyrównanie i margines,
+a następnie **Export title PNG**. **Save style JSON** zachowuje ustawienia do dalszej
+edycji. Ten sam styl działa z `glyfetti title` i `glyfetti build`; wybór trybu wyjścia
+w edytorze dotyczy bieżącej sesji.
+
+Pusty napis lub tekst bez obsługiwanych widocznych znaków zgłasza błąd. Pozostałe
+brakujące znaki są raportowane i zastępowane odstępem. Za duży bufor efektów jest
+odrzucany przed jego utworzeniem: skróć tekst, dodaj wiersze albo zmniejsz rozmiar
+lub supersampling. Tryb nadal nie obsługuje kształtowania kontekstowego pisma.
+
+![Napis PNG ze wspólnymi efektami](docs/images/title.png)
+
 ## Unity (TextMeshPro)
 
 **Package Manager → Add package from git URL:**
@@ -192,7 +228,7 @@ w grach komercyjnych.
 - [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
 - [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
 - [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects
-- [ ] Tryb „title”: całe słowo ze wspólnym obrysem
+- [x] Tryb „title”: całe słowo ze wspólnym obrysem
 - [ ] Wyciąganie palety z obrazka referencyjnego
 
 ## Licencja

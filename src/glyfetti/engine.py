@@ -223,12 +223,8 @@ def effect_padding(st, font, chars, scale):
     return math.ceil((extent + 4) * scale)
 
 
-def build(style_path, out_dir=None, preview_only=False):
-    st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
-    maximum = st.get('max_atlas_size', 8192)
-    if st.get('atlas_width', 1024) > maximum:
-        raise ValueError('atlas_width: exceeds max_atlas_size')
-    base = Path(style_path).parent
+def load_font(st, base):
+    """Resolve, patch and configure a font identically for every output mode."""
     font_path, st = resolve_font(st, base)
     S = st.get('supersample', 3)
     size = st['size']
@@ -246,6 +242,47 @@ def build(style_path, out_dir=None, preview_only=False):
                 raise ValueError(f'variation: unknown axes {sorted(unknown)}')
             var = [var.get(a.axisTag, a.defaultValue) for a in axes]
         font.set_variation_by_axes(var)
+    return font_path, st, font
+
+
+def shaped_glyph(ch, font, st, S, pad):
+    """Plain glyph mask, local baseline and advance, before colored effects."""
+    m, (bx, by), bbox = render_glyph(ch, font, S, pad)
+    cond = st.get('condense', 1.0)
+    if cond != 1.0:  # horizontal condense from the left margin
+        H0, W0 = m.shape
+        nw = max(1, round(W0 * cond))
+        m = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).resize((nw, H0), Image.LANCZOS), np.float32) / 255.0
+        bx = bx * cond
+        bbox = (bbox[0] * cond, bbox[1], bbox[2] * cond, bbox[3])
+        # pad so effects still fit
+        m = np.pad(m, ((0, 0), (pad, pad)))
+        bx += pad
+    if st.get('embolden', 0) > 0:
+        m = grow(m, st['embolden'] * S)
+    jit = st.get('jitter')
+    if jit:  # deterministic "bouncy" letters: rotation + vertical offset
+        import zlib, random
+        rnd = random.Random(zlib.crc32(ch.encode()) ^ jit.get('seed', 0))
+        ang = rnd.uniform(-1, 1) * jit.get('rotate', 0)
+        dy = rnd.uniform(-1, 1) * jit.get('y', 0) * S
+        cx = bx + (bbox[2] - bbox[0]) / 2
+        im = Image.fromarray((m * 255).astype(np.uint8)).rotate(ang, Image.BICUBIC, center=(cx, by))
+        m = np.asarray(im, np.float32) / 255.0
+        by = by + dy
+    adv = font.getlength(ch) / S * st.get('condense', 1.0) + st.get('embolden', 0) * 2 + st.get('tracking', 0)
+    return m, (bx, by), adv
+
+
+def build(style_path, out_dir=None, preview_only=False):
+    st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
+    maximum = st.get('max_atlas_size', 8192)
+    if st.get('atlas_width', 1024) > maximum:
+        raise ValueError('atlas_width: exceeds max_atlas_size')
+    base = Path(style_path).parent
+    font_path, st, font = load_font(st, base)
+    S = st.get('supersample', 3)
+    size = st['size']
     asc, desc = font.getmetrics()
     st['_line_top'] = 0
     st['_line_bottom'] = asc
@@ -263,29 +300,7 @@ def build(style_path, out_dir=None, preview_only=False):
 
     glyphs = []
     for ch in chars:
-        m, (bx, by), bbox = render_glyph(ch, font, S, pad)
-        cond = st.get('condense', 1.0)
-        if cond != 1.0:  # horizontal condense from the left margin
-            H0, W0 = m.shape
-            nw = max(1, round(W0 * cond))
-            m = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).resize((nw, H0), Image.LANCZOS), np.float32) / 255.0
-            bx = bx * cond
-            bbox = (bbox[0] * cond, bbox[1], bbox[2] * cond, bbox[3])
-            # pad so effects still fit
-            m = np.pad(m, ((0, 0), (pad, pad)))
-            bx += pad
-        if st.get('embolden', 0) > 0:
-            m = grow(m, st['embolden'] * S)
-        jit = st.get('jitter')
-        if jit:  # deterministic "bouncy" letters: rotation + vertical offset
-            import zlib, random
-            rnd = random.Random(zlib.crc32(ch.encode()) ^ jit.get('seed', 0))
-            ang = rnd.uniform(-1, 1) * jit.get('rotate', 0)
-            dy = rnd.uniform(-1, 1) * jit.get('y', 0) * S
-            cx = bx + (bbox[2] - bbox[0]) / 2
-            im = Image.fromarray((m * 255).astype(np.uint8)).rotate(ang, Image.BICUBIC, center=(cx, by))
-            m = np.asarray(im, np.float32) / 255.0
-            by = by + dy
+        m, (bx, by), adv = shaped_glyph(ch, font, st, S, pad)
         st['_line_top'] = by - asc
         st['_line_bottom'] = by
         rgba = style_glyph(m, st, S)
@@ -295,7 +310,6 @@ def build(style_path, out_dir=None, preview_only=False):
         img = img.crop(bb)
         # baseline and left edge position after scaling and cropping
         ox, oy = bx / S - bb[0], by / S - bb[1]
-        adv = font.getlength(ch) / S * st.get('condense', 1.0) + st.get('embolden', 0) * 2 + st.get('tracking', 0)
         glyphs.append(dict(ch=ch, img=img, ox=ox, oy=oy, adv=adv))
 
     pos, H, packing = pack_atlas([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum, st.get('atlas_packing', 'maxrects'))

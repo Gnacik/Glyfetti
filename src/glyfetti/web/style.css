@@ -76,7 +76,7 @@ label {
   font-size:12px;
   margin:18px 0 8px;
 }
-select,input[type=text],textarea {
+select,input[type=text],input[type=number],textarea {
   width:100%;
   border:1px solid #aeb7a7;
   background:#fffdf7;
