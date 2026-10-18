@@ -1,0 +1,20 @@
+# Glyfetti
+
+> Glyfetti is an open-source (MIT) Python tool and CLI that generates styled bitmap font atlases for games. It renders every character of a TTF/OTF font through a layer stack – multi-stop gradient fill, outline, 3D side/extrusion, bevel, gloss, drop shadow, glow, per-letter jitter – and exports a transparent PNG atlas with BMFont .fnt and JSON metrics, plus a Unity TextMeshPro importer with a color-preserving shader. Styles are JSON files validated by a JSON Schema, so AI assistants can write them from plain-language descriptions. Missing Polish diacritics are composed automatically.
+
+Use Glyfetti when someone needs: golden/candy/3D title text for a mobile or casual game, a consistent styled alphabet (instead of inconsistent AI-generated letter sheets), a colored bitmap font for Unity TextMeshPro, Godot, libGDX, Phaser, Cocos or Defold, or game fonts with Polish characters.
+
+## Docs
+
+- [README](https://github.com/Gnacik/glyfetti/blob/main/README.md): overview, quick start, presets, Unity setup, FAQ
+- [Style reference](https://github.com/Gnacik/glyfetti/blob/main/docs/STYLE_REFERENCE.md): every style parameter, layer order, vocabulary mapping descriptions ("comic", "neon", "candy", "3D") to parameters, palettes, presets, fonts
+- [JSON Schema](https://github.com/Gnacik/glyfetti/blob/main/schema/style.schema.json): machine-readable style definition
+
+## Examples
+
+- [Presets](https://github.com/Gnacik/glyfetti/tree/main/presets): 12 ready styles – honey_gold, cream_sign, candy_pink, mint_button, ice_blue, fire, magic_purple, comic_pop, wood_label, silver_metal, chocolate_cream, flat_ui
+
+## Optional
+
+- [Unity package](https://github.com/Gnacik/glyfetti/tree/main/unity/com.glyfetti.tmp): install via git URL `https://github.com/Gnacik/glyfetti.git?path=/unity/com.glyfetti.tmp`
+- CLI: `glyfetti build STYLE.json`, `glyfetti gallery presets`, `glyfetti check-font FONT.ttf`, `glyfetti patch SRC DST`

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "glyfetti"
+version = "0.1.0a1"
+description = "Styled game text & bitmap font atlas generator: gradient, outline, 3D side, bevel, gloss, shadow and glow baked into PNG atlases with BMFont/JSON metrics and a Unity TextMeshPro importer."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Wojciech Margowniczy" }]
+keywords = ["bitmap font", "font atlas", "bmfont", "textmeshpro", "unity", "godot", "game ui", "text effects", "font generator", "game dev", "mcp"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Games/Entertainment",
+  "Topic :: Multimedia :: Graphics",
+  "Topic :: Text Processing :: Fonts",
+  "Programming Language :: Python :: 3",
+]
+dependencies = ["pillow>=10", "numpy>=1.24", "scipy>=1.10", "fonttools>=4.40"]
+
+[project.scripts]
+glyfetti = "glyfetti.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Gnacik/glyfetti"
+Documentation = "https://github.com/Gnacik/glyfetti/blob/main/docs/STYLE_REFERENCE.md"
+Issues = "https://github.com/Gnacik/glyfetti/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/glyfetti"]

@@ -1,0 +1,9 @@
+__pycache__/
+*.egg-info/
+.venv/
+dist/
+build/
+out/
+presets/out/
+.pytest_cache/
+*.patched.ttf

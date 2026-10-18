@@ -1,0 +1,78 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "cream_sign",
+  "order": 2,
+  "description": "Cream lettering on dark wood – headers, menus",
+  "font": "../fonts/Grandstander.ttf",
+  "font_label": "Grandstander",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -3,
+  "line_height": 1.05,
+  "condense": 0.8,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFFDF5"
+      ],
+      [
+        0.6,
+        "#FBF0D6"
+      ],
+      [
+        1,
+        "#F1DDB0"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#3E1E0A",
+    "width": 4
+  },
+  "side": {
+    "depth": 5,
+    "dx": 1,
+    "color_top": "#C9A36B",
+    "color_bottom": "#8E6838"
+  },
+  "bevel": {
+    "size": 4,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFFFF",
+    "highlight_strength": 0.4,
+    "shadow_color": "#D8BC8A",
+    "shadow_strength": 0.35
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#1a0b03",
+    "opacity": 0.45,
+    "dx": 1,
+    "dy": 8,
+    "blur": 9
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": {
+    "rotate": 2.5,
+    "y": 2,
+    "seed": 11
+  },
+  "preview": [
+    "Welcome Home",
+    "Garden 7"
+  ],
+  "preview_bg": "#6B4423",
+  "variation": {
+    "wght": 900
+  }
+}

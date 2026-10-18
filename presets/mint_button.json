@@ -1,0 +1,70 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "mint_button",
+  "order": 4,
+  "description": "White text for green call-to-action buttons",
+  "font": "../fonts/Baloo2.ttf",
+  "font_label": "Baloo 2",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -3,
+  "line_height": 1.05,
+  "condense": 0.85,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFFFFF"
+      ],
+      [
+        1,
+        "#E6FFD9"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#1F4D17",
+    "width": 4
+  },
+  "side": {
+    "depth": 5,
+    "dx": 0,
+    "color_top": "#3F8F2E",
+    "color_bottom": "#27611B"
+  },
+  "bevel": {
+    "size": 4,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFFFF",
+    "highlight_strength": 0.3,
+    "shadow_color": "#BFE8AD",
+    "shadow_strength": 0.3
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#0F2A0B",
+    "opacity": 0.35,
+    "dx": 0,
+    "dy": 6,
+    "blur": 6
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": null,
+  "preview": [
+    "Play Now",
+    "Continue"
+  ],
+  "preview_bg": "#5DB33A",
+  "variation": {
+    "wght": 800
+  }
+}

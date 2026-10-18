@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Gnacik/glyfetti/schema/style.schema.json",
+  "title": "Glyfetti style (raw level)",
+  "description": "Styled bitmap font atlas definition. See docs/STYLE_REFERENCE.md.",
+  "type": "object",
+  "required": [
+    "name",
+    "font",
+    "size",
+    "chars",
+    "fill",
+    "outline"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Style name and output file name."
+    },
+    "description": {
+      "type": "string"
+    },
+    "order": {
+      "type": "integer",
+      "description": "Position in the gallery."
+    },
+    "font": {
+      "type": "string",
+      "description": "TTF/OTF path, relative to the style file."
+    },
+    "font_label": {
+      "type": "string",
+      "description": "Human-readable font name for galleries."
+    },
+    "variation": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      ],
+      "description": "Variable font axes, e.g. {\"wght\": 800}."
+    },
+    "auto_diacritics": {
+      "type": "boolean",
+      "default": true,
+      "description": "Compose missing Polish letters from accents in the font."
+    },
+    "size": {
+      "type": "number",
+      "description": "Font size in the atlas (px).",
+      "minimum": 8,
+      "maximum": 512
+    },
+    "supersample": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 3
+    },
+    "chars": {
+      "type": "string",
+      "description": "Characters to include."
+    },
+    "atlas_width": {
+      "type": "integer",
+      "default": 1024
+    },
+    "tracking": {
+      "type": "number",
+      "description": "Extra letter spacing (px); negative merges outlines."
+    },
+    "line_height": {
+      "type": "number",
+      "description": "Line height multiplier.",
+      "minimum": 0.5,
+      "maximum": 3
+    },
+    "condense": {
+      "type": "number",
+      "description": "Horizontal glyph scale.",
+      "minimum": 0.5,
+      "maximum": 1.5
+    },
+    "embolden": {
+      "type": "number",
+      "description": "Stroke thickening before effects (px).",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "preview": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preview_bg": {
+      "type": "string",
+      "description": "#RRGGBB or 'transparent'."
+    },
+    "jitter": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rotate": {
+              "type": "number",
+              "description": "Max rotation (deg)."
+            },
+            "y": {
+              "type": "number",
+              "description": "Max vertical offset (px)."
+            },
+            "seed": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "fill": {
+      "type": "object",
+      "required": [
+        "stops"
+      ],
+      "properties": {
+        "stops": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "gradient_space": {
+          "enum": [
+            "glyph",
+            "line"
+          ],
+          "default": "glyph"
+        }
+      }
+    },
+    "outline": {
+      "type": "object",
+      "required": [
+        "color",
+        "width"
+      ],
+      "properties": {
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "width": {
+          "type": "number",
+          "description": "Outline width (px).",
+          "minimum": 0,
+          "maximum": 40
+        }
+      }
+    },
+    "side": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false to disable the layer."
+        },
+        "depth": {
+          "type": "number",
+          "description": "3D side depth (px).",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "dx": {
+          "type": "number",
+          "description": "Horizontal skew of the side (px)."
+        },
+        "color_top": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "color_bottom": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        }
+      }
+    },
+    "bevel": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false to disable the layer."
+        },
+        "size": {
+          "type": "number",
+          "description": "Bevel width (px).",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "soften": {
+          "type": "number",
+          "description": "Height map smoothing (px).",
+          "minimum": 0
+        },
+        "light_angle": {
+          "type": "number",
+          "description": "Light direction in degrees, 90 = from top."
+        },
+        "highlight_color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "highlight_strength": {
+          "type": "number",
+          "description": "",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "shadow_color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "shadow_strength": {
+          "type": "number",
+          "description": "",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "gloss": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false to disable the layer."
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "opacity": {
+          "type": "number",
+          "description": "",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "inset": {
+          "type": "number",
+          "description": "Inset from edge (px).",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "description": "Covered fraction from top.",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "blur": {
+          "type": "number",
+          "description": "",
+          "minimum": 0
+        }
+      }
+    },
+    "shadow": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false to disable the layer."
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "opacity": {
+          "type": "number",
+          "description": "",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dx": {
+          "type": "number",
+          "description": "Offset X (px)."
+        },
+        "dy": {
+          "type": "number",
+          "description": "Offset Y (px)."
+        },
+        "blur": {
+          "type": "number",
+          "description": "Blur (px). dx=dy=0 + large blur = glow.",
+          "minimum": 0
+        }
+      }
+    },
+    "extrude": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set false to disable the layer."
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "depth": {
+          "type": "number",
+          "description": "Offset of the base outside the outline (px).",
+          "minimum": 0
+        },
+        "opacity": {
+          "type": "number",
+          "description": "",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "blur": {
+          "type": "number",
+          "description": "",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

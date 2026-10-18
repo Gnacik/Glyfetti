@@ -1,0 +1,79 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "candy_pink",
+  "order": 3,
+  "description": "Glossy candy pink – bonuses, shop, rewards",
+  "font": "../fonts/Sniglet-ExtraBold.ttf",
+  "font_label": "Sniglet",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -4,
+  "line_height": 1.05,
+  "condense": 0.82,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFE6F1"
+      ],
+      [
+        0.5,
+        "#FF9CC7"
+      ],
+      [
+        1,
+        "#FF5E9E"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#5A0F2E",
+    "width": 4
+  },
+  "side": {
+    "depth": 6,
+    "dx": 1,
+    "color_top": "#E2457F",
+    "color_bottom": "#9E1C50"
+  },
+  "bevel": {
+    "size": 4,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFFFF",
+    "highlight_strength": 0.6,
+    "shadow_color": "#E0528C",
+    "shadow_strength": 0.35
+  },
+  "gloss": {
+    "color": "#FFFFFF",
+    "opacity": 0.45,
+    "inset": 5,
+    "height": 0.4,
+    "blur": 3
+  },
+  "shadow": {
+    "color": "#7A1A45",
+    "opacity": 0.35,
+    "dx": 1,
+    "dy": 8,
+    "blur": 8
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": {
+    "rotate": 2.5,
+    "y": 2,
+    "seed": 11
+  },
+  "preview": [
+    "Sweet Reward!",
+    "+250 gems"
+  ],
+  "preview_bg": "#FCE4EC"
+}

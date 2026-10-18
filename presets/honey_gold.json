@@ -1,0 +1,79 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "honey_gold",
+  "order": 1,
+  "description": "Golden 3D letters for wooden signs – titles, victory screens",
+  "font": "../fonts/TitanOne-Regular.ttf",
+  "font_label": "Titan One",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -3,
+  "line_height": 1.05,
+  "condense": 0.766,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFF1BC"
+      ],
+      [
+        0.45,
+        "#FCE288"
+      ],
+      [
+        1,
+        "#F8C95A"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#562506",
+    "width": 4
+  },
+  "side": {
+    "depth": 6,
+    "dx": 1.5,
+    "color_top": "#EFA032",
+    "color_bottom": "#C46A14"
+  },
+  "bevel": {
+    "size": 4,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFBE8",
+    "highlight_strength": 0.5,
+    "shadow_color": "#E9A23A",
+    "shadow_strength": 0.4
+  },
+  "gloss": {
+    "color": "#FFFFFF",
+    "opacity": 0.22,
+    "inset": 6,
+    "height": 0.35,
+    "blur": 4
+  },
+  "shadow": {
+    "color": "#2a1206",
+    "opacity": 0.5,
+    "dx": 1,
+    "dy": 8,
+    "blur": 9
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": {
+    "rotate": 2.5,
+    "y": 2,
+    "seed": 11
+  },
+  "preview": [
+    "Level Complete!",
+    "Score: 2 560"
+  ],
+  "preview_bg": "#8B5A2B"
+}

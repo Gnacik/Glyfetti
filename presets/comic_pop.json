@@ -1,0 +1,62 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "comic_pop",
+  "order": 8,
+  "description": "Flat comic style: yellow, black outline, hard shadow",
+  "font": "../fonts/TitanOne-Regular.ttf",
+  "font_label": "Titan One",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -2,
+  "line_height": 1.05,
+  "condense": 0.8,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFE94D"
+      ],
+      [
+        1,
+        "#FFD21F"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#000000",
+    "width": 5
+  },
+  "side": {
+    "enabled": false
+  },
+  "bevel": {
+    "enabled": false
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#000000",
+    "opacity": 1.0,
+    "dx": 6,
+    "dy": 6,
+    "blur": 0
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": {
+    "rotate": 6,
+    "y": 4,
+    "seed": 3
+  },
+  "preview": [
+    "BOOM! Super!",
+    "Wow 100%"
+  ],
+  "preview_bg": "#3BB0FF"
+}

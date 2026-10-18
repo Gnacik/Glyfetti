@@ -1,0 +1,9 @@
+{
+  "name": "Glyfetti.Editor",
+  "rootNamespace": "Glyfetti.Editor",
+  "references": ["Unity.TextMeshPro"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": true
+}

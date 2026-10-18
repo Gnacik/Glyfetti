@@ -1,0 +1,70 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "wood_label",
+  "order": 9,
+  "description": "Brown lettering on parchment – labels, panels",
+  "font": "../fonts/Grandstander.ttf",
+  "font_label": "Grandstander",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -3,
+  "line_height": 1.05,
+  "condense": 0.85,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#D39657"
+      ],
+      [
+        1,
+        "#8B5426"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#3B1F0B",
+    "width": 3
+  },
+  "side": {
+    "depth": 3,
+    "dx": 0,
+    "color_top": "#5A3215",
+    "color_bottom": "#3B1F0B"
+  },
+  "bevel": {
+    "size": 3,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#F2C08A",
+    "highlight_strength": 0.35,
+    "shadow_color": "#5A3215",
+    "shadow_strength": 0.3
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#3B1F0B",
+    "opacity": 0.2,
+    "dx": 0,
+    "dy": 4,
+    "blur": 4
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": null,
+  "preview": [
+    "Game Settings",
+    "Sound 80%"
+  ],
+  "preview_bg": "#F3E1C0",
+  "variation": {
+    "wght": 800
+  }
+}

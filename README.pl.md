@@ -1,0 +1,158 @@
+<p align="center">
+  <img src="docs/images/hero.png" alt="Glyfetti – generator stylizowanych napisów i atlasów bitmap fontów do gier" width="100%">
+</p>
+
+<p align="center">
+  🌐 <a href="README.md">English</a> | <b>Polski</b>
+</p>
+
+# Glyfetti
+
+**Glyfetti to otwartoźródłowy generator bitmap fontów dla twórców gier.** Zamienia dowolny font TTF/OTF
+w **stylizowany atlas znaków**: gradient, obrys, bok 3D, bevel, połysk, cień i poświata są „wypalone” w PNG.
+Do tego metryki **BMFont `.fnt`** i **JSON** oraz importer do **Unity TextMeshPro**.
+
+Każdy styl to mały **plik JSON**: można go wersjonować, udostępniać, zaczynać od presetu albo poprosić
+**asystenta AI**, żeby napisał go z opisu typu *„złote litery 3D z miękkim cieniem”*.
+
+> **Status: alpha (0.1).** Silnik, CLI, presety i eksport BMFont/JSON działają. Importer Unity jest
+> eksperymentalny. Warstwa prosta stylu i serwer MCP są w planach – patrz [plan rozwoju](#plan-rozwoju).
+
+<p align="center">
+  <img src="docs/images/before_after.png" alt="Zwykły font Titan One i styl honey_gold" width="100%">
+</p>
+
+## Po co?
+
+Gry casualowe i mobilne potrzebują grubych, kolorowych i czytelnych napisów: *Poziom ukończony!*, *x3 Combo*,
+*Nagroda!*. Zwykle są trzy sposoby, każdy z haczykiem:
+
+- **Generatory obrazów AI** rysują świetne pojedyncze napisy, ale nie dają spójnego alfabetu: litery różnią się
+  wielkością, linią bazową i stylem, a polskich znaków brakuje.
+- **Narzędzia z GUI** (Hiero, SnowB BMF, Glyph Designer…) wymagają wyklikania każdego efektu, a powtórzenie
+  identycznego wyglądu w innym foncie czy projekcie jest żmudne.
+- **Efekty TextMeshPro w locie** dają obrys i cień, ale nie prawdziwy bok 3D, wielowarstwowy gradient ani
+  „cukierkowy” połysk.
+
+Glyfetti przepuszcza **każdy znak przez ten sam stos warstw**, więc cały alfabet jest spójny, a wygląd
+zapisany jest w pliku tekstowym, który łatwo zmienić, porównać i użyć ponownie.
+
+## Możliwości
+
+- 🎨 **Warstwy efektów:** gradient wielopunktowy, obrys, bok 3D, bevel (z mapy odległości), połysk, cień,
+  poświata, twarda „naklejkowa” podstawa.
+- 🔤 **Dowolny font TTF/OTF**, także zmienny (osie `wght`, `wdth`), plus `condense` i `embolden` do
+  zwężania i pogrubiania bez edycji fontu.
+- 🤸 **Skaczące litery** (`jitter`): obrót i przesunięcie każdego znaku dla efektu ręcznego liternictwa.
+- 🇵🇱 **Automatyczne polskie znaki:** brakujące ą ć ę ń ś ź ż są składane z akcentów zawartych w foncie,
+  więc fonty takie jak Chewy czy Sniglet nadają się do polskich tekstów.
+- 📦 **Eksport:** atlas PNG z przezroczystością, BMFont `.fnt` (Godot, libGDX, Phaser, Cocos, Defold…),
+  metryki JSON, podgląd.
+- 🎮 **Paczka Unity TextMeshPro:** tworzy TMP Font Asset z atlasu i zawiera shader zachowujący kolory
+  (standardowe shadery bitmapowe TMP biorą tylko alfę).
+- 🍬 **12 gotowych presetów**: złoto, cukierki, lód, ogień, magia, komiks, srebro, tekst UI i inne.
+- 🧾 **JSON Schema** stylów: walidacja i podpowiedzi w VS Code.
+
+## Szybki start
+
+```bash
+git clone https://github.com/Gnacik/glyfetti.git
+cd glyfetti
+pip install -e .
+
+glyfetti build presets/honey_gold.json              # pełny atlas do presets/out/
+glyfetti build presets/fire.json --preview-only     # szybki podgląd
+glyfetti gallery presets -o gallery.png             # galeria wszystkich presetów
+```
+
+| Plik | Zawartość |
+|---|---|
+| `honey_gold.png` | przezroczysty atlas |
+| `honey_gold.fnt` | metryki BMFont |
+| `honey_gold.json` | metryki dla importera Unity |
+| `honey_gold_preview.png` | tekst złożony z atlasu (test metryk i wyglądu) |
+
+## Jak zbudowany jest styl
+
+<p align="center">
+  <img src="docs/images/layers.png" alt="Warstwy Glyfetti: wypełnienie, obrys, bok 3D, bevel, połysk, cień" width="100%">
+</p>
+
+Wszystkie parametry opisuje **[dokumentacja stylów](docs/STYLE_REFERENCE.pl.md)**.
+
+## Presety
+
+<p align="center">
+  <img src="docs/images/gallery.png" alt="Galeria 12 presetów Glyfetti" width="100%">
+</p>
+
+| Preset | Font | Do czego |
+|---|---|---|
+| `honey_gold` | Titan One | tytuły, ekrany zwycięstwa |
+| `cream_sign` | Grandstander | nagłówki na ciemnym drewnie |
+| `candy_pink` | Sniglet | bonusy, sklep, nagrody |
+| `mint_button` | Baloo 2 | zielone przyciski |
+| `ice_blue` | Titan One | efekty zamrożenia |
+| `fire` | Titan One | combo, mnożniki |
+| `magic_purple` | Grandstander | power-upy, czary |
+| `comic_pop` | Titan One | wykrzyknienia „BUM!” |
+| `wood_label` | Grandstander | etykiety, panele |
+| `silver_metal` | Baloo 2 | osiągnięcia, rankingi |
+| `chocolate_cream` | Chewy | casualowe tytuły |
+| `flat_ui` | Dosis | drobny tekst UI, liczby |
+
+## Unity (TextMeshPro)
+
+**Package Manager → Add package from git URL:**
+
+```
+https://github.com/Gnacik/glyfetti.git?path=/unity/com.glyfetti.tmp
+```
+
+1. Skopiuj `<nazwa>.png` i `<nazwa>.json` do `Assets/`.
+2. Zaznacz `.json` → **Tools → Glyfetti → Create TMP Font Asset**.
+3. Przypisz `<nazwa> TMP.asset` do tekstu TextMeshPro i zostaw **biały kolor wierzchołków**.
+
+Importer jest **eksperymentalny**. Jeśli nie działa w Twojej wersji Unity/TMP, załóż issue z logiem z konsoli.
+
+## Godot, libGDX, Phaser, Cocos, Defold
+
+Użyj pary `.fnt` + `.png`, czyli standardowego formatu AngelCode BMFont.
+
+## FAQ
+
+**Jak zrobić złote napisy 3D do gry w Unity?**
+`glyfetti build presets/honey_gold.json`, import PNG + JSON paczką Unity i gotowe.
+
+**Czy mogę użyć własnego fontu?**
+Tak, wskaż dowolny plik TTF/OTF w polu `"font"`. Fonty zmienne ustawisz przez `"variation": {"wght": 800}`.
+
+**Czy działa z polskimi znakami?**
+Tak. Brakujące litery są składane automatycznie, jeśli font zawiera akcenty. `glyfetti check-font` pokaże braki.
+
+**Dlaczego bitmapa, a nie SDF?**
+SDF skaluje się idealnie, ale nie przeniesie wielokolorowego gradientu, boku 3D i połysku. Generuj atlas
+w największym rozmiarze, w jakim wyświetlasz tekst.
+
+**Czy AI może tworzyć style za mnie?**
+Tak, styl to zwykły JSON opisany schematem, więc każdy asystent napisze go już dziś. Serwer MCP z podglądem
+w czacie jest w planach.
+
+**Czy mogę używać w grach komercyjnych?**
+Kod jest na MIT. Dołączone fonty mają własne licencje (SIL OFL / Apache 2.0), które pozwalają na użycie
+w grach komercyjnych.
+
+## Plan rozwoju
+
+- [x] Silnik warstw, CLI, 12 presetów, eksport BMFont/JSON, automatyczne polskie znaki, JSON Schema
+- [x] Importer Unity TextMeshPro + shader kolorowy (eksperymentalny)
+- [ ] **Warstwa prosta stylu**: ok. 12 pokręteł (`base_color`, `depth_3d`, `shine`, `glow`, `playful`…)
+- [ ] **Serwer MCP**: tworzenie, podgląd i poprawianie stylów w Claude, Cursorze i innych asystentach
+- [ ] `glyfetti serve`: lokalne web UI z podglądem na żywo
+- [ ] Kerning z tabeli GPOS, pakowanie atlasu MaxRects
+- [ ] Tryb „title”: całe słowo ze wspólnym obrysem
+- [ ] Wyciąganie palety z obrazka referencyjnego
+
+## Licencja
+
+Kod: [MIT](LICENSE). Fonty: patrz [fonts/README.md](fonts/README.md).

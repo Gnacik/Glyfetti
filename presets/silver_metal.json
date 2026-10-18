@@ -1,0 +1,82 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "silver_metal",
+  "order": 10,
+  "description": "Metallic silver – achievements, leaderboards",
+  "font": "../fonts/Baloo2.ttf",
+  "font_label": "Baloo 2",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": -3,
+  "line_height": 1.05,
+  "condense": 0.82,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFFFFF"
+      ],
+      [
+        0.35,
+        "#D5DCE3"
+      ],
+      [
+        0.6,
+        "#8C96A1"
+      ],
+      [
+        0.8,
+        "#C9D1D9"
+      ],
+      [
+        1,
+        "#EEF2F5"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#1B2026",
+    "width": 4
+  },
+  "side": {
+    "depth": 5,
+    "dx": 1,
+    "color_top": "#5C6671",
+    "color_bottom": "#2F363E"
+  },
+  "bevel": {
+    "size": 4,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFFFF",
+    "highlight_strength": 0.6,
+    "shadow_color": "#6C7782",
+    "shadow_strength": 0.4
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#000000",
+    "opacity": 0.5,
+    "dx": 1,
+    "dy": 8,
+    "blur": 8
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": null,
+  "preview": [
+    "Silver Trophy",
+    "2nd place"
+  ],
+  "preview_bg": "#2E3A46",
+  "variation": {
+    "wght": 800
+  }
+}

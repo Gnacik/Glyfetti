@@ -1,0 +1,74 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "chocolate_cream",
+  "order": 11,
+  "description": "Hand-drawn cream with a chocolate outline",
+  "font": "../fonts/Chewy-Regular.ttf",
+  "font_label": "Chewy",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": 1,
+  "line_height": 1.05,
+  "condense": 1.0,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#FFFCF2"
+      ],
+      [
+        0.45,
+        "#FDEFC8"
+      ],
+      [
+        1,
+        "#F4C964"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#4E2710",
+    "width": 6
+  },
+  "side": {
+    "enabled": false
+  },
+  "bevel": {
+    "size": 6,
+    "soften": 1.0,
+    "light_angle": 100,
+    "highlight_color": "#FFFFFF",
+    "highlight_strength": 0.5,
+    "shadow_color": "#D9A75A",
+    "shadow_strength": 0.45
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#2a1206",
+    "opacity": 0.4,
+    "dx": 0,
+    "dy": 9,
+    "blur": 6
+  },
+  "extrude": {
+    "color": "#3B1B09",
+    "depth": 6,
+    "opacity": 0.9
+  },
+  "jitter": {
+    "rotate": 4,
+    "y": 3,
+    "seed": 11
+  },
+  "preview": [
+    "Sweet Victory",
+    "Bake it!"
+  ],
+  "preview_bg": "#8B5A2B"
+}

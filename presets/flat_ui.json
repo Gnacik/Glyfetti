@@ -1,0 +1,61 @@
+{
+  "$schema": "../schema/style.schema.json",
+  "name": "flat_ui",
+  "order": 12,
+  "description": "Clean UI text: dark with a white rim – descriptions, numbers",
+  "font": "../fonts/Dosis.ttf",
+  "font_label": "Dosis",
+  "size": 90,
+  "supersample": 3,
+  "atlas_width": 2048,
+  "tracking": 0,
+  "line_height": 1.05,
+  "condense": 1.0,
+  "embolden": 0,
+  "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻabcdefghijklmnopqrstuvwxyząćęłńóśźż0123456789!?.,:;%+-–×*/\\#'\"=()[]{}<>&@_~^$€…«»„”“",
+  "fill": {
+    "gradient_space": "glyph",
+    "stops": [
+      [
+        0,
+        "#5A3A1E"
+      ],
+      [
+        1,
+        "#5A3A1E"
+      ]
+    ]
+  },
+  "outline": {
+    "color": "#FFFFFF",
+    "width": 2
+  },
+  "side": {
+    "enabled": false
+  },
+  "bevel": {
+    "enabled": false
+  },
+  "gloss": {
+    "enabled": false
+  },
+  "shadow": {
+    "color": "#000000",
+    "opacity": 0.25,
+    "dx": 0,
+    "dy": 3,
+    "blur": 3
+  },
+  "extrude": {
+    "enabled": false
+  },
+  "jitter": null,
+  "preview": [
+    "Options: Music 80%",
+    "Coins 1 250"
+  ],
+  "preview_bg": "#ECE6DA",
+  "variation": {
+    "wght": 800
+  }
+}
