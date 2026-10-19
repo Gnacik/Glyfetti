@@ -156,7 +156,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Skopiuj wygenerowany wpis serwera do ustawień klienta MCP. Klient uruchamia
-`glyfetti mcp` przez stdio. Osiem narzędzi udostępnia presety, fonty, rozwijanie
+`glyfetti mcp` przez stdio. Dziewięć narzędzi udostępnia presety, fonty, rozwijanie
 stylów, rzeczywiste podglądy PNG i eksport w pełnej jakości. Pliki mają ścieżki
 lokalne i URI zasobów MCP; poprzednie eksporty nie są nadpisywane. Zwykłe CLI
 oraz edytor nadal obsługują Python 3.10 bez zależności MCP.
