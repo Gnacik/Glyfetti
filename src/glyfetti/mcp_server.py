@@ -158,10 +158,10 @@ def create_server(output_dir='glyfetti-output'):
     @server.tool(annotations=read_only)
     def analyze_reference_image(image: str, style: dict[str, Any]) -> dict[str, Any]:
         """Estimate fill gradient and outline from a local PNG/JPEG; keep the font and effect geometry."""
-        from .reference import analyze_reference
+        from .reference import MAX_REFERENCE_BYTES, analyze_reference
         source = Path(image).expanduser()
         try:
-            if source.stat().st_size > 4 * 1024 * 1024:
+            if source.stat().st_size > MAX_REFERENCE_BYTES:
                 raise ValueError('Reference image exceeds 4 MiB.')
             result = analyze_reference(source.read_bytes(), prepare(style))
             return result

@@ -108,7 +108,9 @@ def test_authenticated_reference_http_endpoint_and_bad_upload():
         url = f'http://127.0.0.1:{server.server_port}'
         try:
             with urlopen(url + '/api/catalog') as response:
-                token = json.load(response)['token']
+                catalog = json.load(response)
+            token = catalog['token']
+            assert catalog['max_reference_bytes'] == MAX_REFERENCE_BYTES
             payload = json.dumps({
                 'style': _style(),
                 'image': 'data:image/png;base64,' + base64.b64encode(_image_bytes()).decode(),

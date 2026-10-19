@@ -7,7 +7,7 @@ function syncMode() {
   $('export-description').textContent = title ? 'One transparent image. A shared outline, shadow and 3D finish across your whole title.' : 'Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.';
   $('output-note').textContent = title ? 'Title effects and gradients span the complete text. The preview background is not included in your PNG. Save the style JSON to edit this title later.' : 'Preview text characters are added to the exported character set. Missing characters are reported below the preview.';
 }
-let presets = [], style, token, timer, rendering = false, pending = false, exporting = false, revision = 0;
+let presets = [], style, token, maxReferenceBytes = 0, timer, rendering = false, pending = false, exporting = false, revision = 0;
 const knobs = [
   ['size', 'Size', 16, 180, 1, 'px'], ['outline.width', 'Outline', 0, 20, .5, 'px'],
   ['side.depth', '3D depth', 0, 30, 1, 'px'], ['gloss.opacity', 'Gloss', 0, 1, .01, ''],
@@ -92,8 +92,8 @@ function imageAsDataURL(file) {
 $('analyze-reference').addEventListener('click', async () => {
   const file = $('reference-file').files[0];
   if (!file) return;
-  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 4 * 1024 * 1024) {
-    message('Choose a PNG/JPG reference smaller than 4 MiB.', true); return;
+  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > maxReferenceBytes) {
+    message(`Choose a PNG/JPG reference smaller than ${maxReferenceBytes / 1048576} MiB.`, true); return;
   }
   $('analyze-reference').disabled = true;
   message('Analyzing reference image locally…');
@@ -275,7 +275,7 @@ $('apply-simple').addEventListener('click', async () => {
 (async () => {
   try {
     const response = await fetch('/api/catalog'); if (!response.ok) throw new Error('Could not load presets.');
-    const catalog = await response.json(); presets = catalog.presets; token = catalog.token;
+    const catalog = await response.json(); presets = catalog.presets; token = catalog.token; maxReferenceBytes = catalog.max_reference_bytes;
     presets.forEach((preset, index) => { const option = document.createElement('option'); option.value = index; option.textContent = preset.name.replaceAll('_', ' '); $('preset').append(option); });
     catalog.fonts.forEach(path => { const option = document.createElement('option'); option.value = path; option.textContent = path.split(/[\\/]/).at(-1).replace(/\.ttf$/i, ''); $('font').append(option); });
     selectPreset(); $('export').disabled = false; $('save-style').disabled = false; $('apply-simple').disabled = false; $('quality-run').disabled = false;
