@@ -12,6 +12,7 @@ def main(argv=None):
     b.add_argument('style', nargs='+', help='style JSON file(s)')
     b.add_argument('-o', '--out', help='output directory (default: <style dir>/out)')
     b.add_argument('--preview-only', action='store_true', help='render only the preview text (fast)')
+    b.add_argument('-j', '--workers', type=int, help='glyph rendering threads (default: CPU count, 1 = sequential)')
 
     title = sub.add_parser('title', help='render whole text with shared effects into a transparent PNG')
     title.add_argument('style', help='style JSON; uses its preview text unless --text is given')
@@ -139,7 +140,7 @@ def run(a):
     elif a.cmd == 'build':
         from .engine import build
         for s in a.style:
-            r = build(s, out_dir=a.out, preview_only=a.preview_only)
+            r = build(s, out_dir=a.out, preview_only=a.preview_only, workers=a.workers)
             msg = (f"{r['name']}: {r['glyphs']} glyphs, {r['kernings']} kerning pairs, "
                    f"atlas {r['atlas'][0]}x{r['atlas'][1]} ({r['packing']}, {r['occupancy']:.0%} occupied) -> {r['out']}")
             if r['skipped']:

@@ -333,7 +333,7 @@ glyfetti expand STYLE.json [-o expanded.json]
 
 glyfetti validate STYLE.json [STYLE2.json …]
 
-glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only]
+glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N]
 glyfetti inspect STYLE.json [-o report.json] [--strict]
 glyfetti reference IMAGE.png [--style STYLE.json] [-o OUT.style.json]
 glyfetti gallery [FOLDER] [-o gallery.png]

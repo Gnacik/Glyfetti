@@ -35,3 +35,11 @@ def test_polish_characters_present_after_build(tmp_path):
     ids = {c["id"] for c in meta["chars"]}
     assert all(ord(c) in ids for c in "ĄąĘęŻż")
     assert Image.open(tmp_path / f"{r['name']}.png").mode == "RGBA"
+
+
+def test_parallel_build_matches_sequential(tmp_path):
+    preset = ROOT / "presets" / "fire.json"
+    build(preset, out_dir=tmp_path / "seq", preview_only=True, workers=1)
+    build(preset, out_dir=tmp_path / "par", preview_only=True, workers=4)
+    for ext in ("png", "fnt", "json"):
+        assert (tmp_path / "seq" / f"fire.{ext}").read_bytes() == (tmp_path / "par" / f"fire.{ext}").read_bytes()

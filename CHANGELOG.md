@@ -18,6 +18,7 @@
 - Add tests for clipping detection and MCP `analyze_reference_image`.
 
 - Speed up condensed styles (~35% faster `fire` build) by dropping redundant horizontal render padding; metrics unchanged.
+- Render glyphs on a thread pool (`build(workers=…)`, `glyfetti build -j N`; default CPU count, `1` = sequential); `fire` build ~5.8x faster, output byte-identical.
 
 ## 0.1.5a1
 
