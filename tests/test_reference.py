@@ -55,10 +55,38 @@ def test_flat_jpeg_background_and_absent_outline():
     assert result['style']['outline']['width'] == 0
 
 
-@pytest.mark.parametrize('image', [b'', b'not-an-image', b'x' * (MAX_REFERENCE_BYTES + 1)], ids=['empty', 'garbage', 'oversized'])
+def _gif_bytes():
+    stream = BytesIO()
+    Image.new('RGB', (64, 64), '#F0C048').save(stream, 'GIF')
+    return stream.getvalue()
+
+
+@pytest.mark.parametrize('image', [b'', b'not-an-image', b'x' * (MAX_REFERENCE_BYTES + 1), _gif_bytes()], ids=['empty', 'garbage', 'oversized', 'gif'])
 def test_invalid_or_oversized_image_is_rejected(image):
     with pytest.raises(ValueError):
         analyze_reference(image, _style())
+
+
+def test_exif_rotated_jpeg_uses_transposed_dimensions():
+    image = Image.new('RGB', (200, 80), 'white')
+    ImageDraw.Draw(image).rectangle((20, 15, 180, 65), fill='#D09020', outline='#301000', width=5)
+    exif = Image.Exif()
+    exif[0x0112] = 6
+    stream = BytesIO()
+    image.save(stream, 'JPEG', exif=exif.tobytes())
+    result = analyze_reference(stream.getvalue(), _style())
+    assert result['analysis']['image_size'] == [80, 200]
+
+
+def test_tightly_cropped_transparent_png_uses_alpha():
+    image = Image.new('RGBA', (200, 60), (0, 0, 0, 0))
+    paint = ImageDraw.Draw(image)
+    for x in range(0, 200, 40):
+        paint.rectangle((x, 0, x + 29, 59), fill='#F0C040', outline='#402000', width=4)
+    stream = BytesIO()
+    image.save(stream, 'PNG')
+    result = analyze_reference(stream.getvalue(), _style())
+    assert result['analysis']['segmentation'] == 'alpha'
 
 
 def test_solid_background_without_foreground_is_rejected():
@@ -86,7 +114,9 @@ def test_authenticated_reference_http_endpoint_and_bad_upload():
         url = f'http://127.0.0.1:{server.server_port}'
         try:
             with urlopen(url + '/api/catalog') as response:
-                token = json.load(response)['token']
+                catalog = json.load(response)
+            token = catalog['token']
+            assert catalog['max_reference_bytes'] == MAX_REFERENCE_BYTES
             payload = json.dumps({
                 'style': _style(),
                 'image': 'data:image/png;base64,' + base64.b64encode(_image_bytes()).decode(),

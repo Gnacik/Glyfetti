@@ -8,7 +8,7 @@ import uuid
 
 from fontTools.ttLib import TTFont, TTLibError
 
-from .engine import resolve_font
+from .engine import prepare_style
 from .patch import missing_chars
 from .server import catalog, render_style
 from .simple import FONTS
@@ -59,14 +59,7 @@ def create_server(output_dir='glyfetti-output'):
 
     def prepare(style, text=None):
         try:
-            raw = validate_style(style)
-            if text is not None:
-                raw['preview'] = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
-            raw['chars'] = ''.join(dict.fromkeys(raw['chars'] + ''.join(raw.get('preview', []))))
-            raw = validate_style(raw)
-            font_path, _ = resolve_font(dict(raw, auto_diacritics=False), Path.cwd())
-            raw['font'] = str(font_path.resolve())
-            return raw
+            return prepare_style(style, Path.cwd(), text)
         except (ValueError, OSError, KeyError, TTLibError) as error:
             raise ToolError(str(error)) from error
 
@@ -151,17 +144,17 @@ def create_server(output_dir='glyfetti-output'):
         """Check actual rendered glyphs, atlas bounds, clipping, metrics, Polish coverage and kerning."""
         from .quality import inspect_style
         try:
-            return inspect_style(prepare(style), base=Path.cwd(), include_atlas=False)
+            return inspect_style(style, base=Path.cwd(), include_atlas=False)
         except (ValueError, OSError, KeyError, TTLibError) as error:
             raise ToolError(str(error)) from error
 
     @server.tool(annotations=read_only)
     def analyze_reference_image(image: str, style: dict[str, Any]) -> dict[str, Any]:
         """Estimate fill gradient and outline from a local PNG/JPEG; keep the font and effect geometry."""
-        from .reference import analyze_reference
+        from .reference import MAX_REFERENCE_BYTES, analyze_reference
         source = Path(image).expanduser()
         try:
-            if source.stat().st_size > 4 * 1024 * 1024:
+            if source.stat().st_size > MAX_REFERENCE_BYTES:
                 raise ValueError('Reference image exceeds 4 MiB.')
             result = analyze_reference(source.read_bytes(), prepare(style))
             return result

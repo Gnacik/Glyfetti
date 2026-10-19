@@ -11,8 +11,7 @@ import tempfile
 
 from PIL import Image
 
-from .engine import build, resolve_font
-from .validation import validate_style
+from .engine import build, prepare_style
 
 POLISH = "ĄĆĘŁŃÓŚŹŻąćęłńóśźż"
 
@@ -153,11 +152,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
 
 def inspect_style(style, base=".", include_atlas=False):
     """Build real full-quality atlas in a temporary directory and inspect it."""
-    raw = validate_style(style)
-    raw["chars"] = "".join(dict.fromkeys(raw["chars"] + "".join(raw.get("preview", []))))
-    raw = validate_style(raw)
-    font_path, _ = resolve_font(dict(raw, auto_diacritics=False), Path(base))
-    raw["font"] = str(font_path.resolve())
+    raw = prepare_style(style, base)
     with tempfile.TemporaryDirectory(prefix="glyfetti-inspect-") as directory:
         root = Path(directory)
         input_file = root / "style.json"

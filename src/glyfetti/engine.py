@@ -200,6 +200,18 @@ def resolve_font(st, base):
     return path, st
 
 
+def prepare_style(style, base, text=None):
+    """Validate a style, merge preview text into chars and pin an absolute font path."""
+    raw = validate_style(style)
+    if text is not None:
+        raw['preview'] = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    raw['chars'] = ''.join(dict.fromkeys(raw['chars'] + ''.join(raw.get('preview', []))))
+    raw = validate_style(raw)
+    font_path, _ = resolve_font(dict(raw, auto_diacritics=False), Path(base))
+    raw['font'] = str(font_path.resolve())
+    return raw
+
+
 FONTS_DIR = DATA_DIR / 'fonts'
 
 
@@ -354,42 +366,43 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False):
                      'xo': g['xoff'], 'yo': g['yoff'], 'xa': round(g['adv'])} for g in glyphs]}
     (out / f'{name}.json').write_text(json.dumps(jd, ensure_ascii=False), encoding='utf-8')
 
-    # preview: assemble text from the atlas using the metrics (tests them)
-    gm = {g['ch']: g for g in glyphs}
-    sample = st.get('preview', ['Level complete!', 'Score: 2 560'])
-    placements = []
-    left = top = 0
-    right, bottom = 0, line_h * len(sample)
-    for i, text in enumerate(sample):
-        cursor = 0
-        previous = None
-        for char in text:
-            if previous is not None:
-                cursor += pair_offsets.get((ord(previous), ord(char)), 0)
-            if char in gm:
-                glyph = gm[char]
-                x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
-                placements.append((glyph['img'], x, y))
-                left, top = min(left, x), min(top, y)
-                right, bottom = max(right, x + glyph['img'].width), max(bottom, y + glyph['img'].height)
-                cursor += round(glyph['adv'])
-            else:
-                cursor += space_adv
-            previous = char if char in gm or char == ' ' else None
-        left, right = min(left, cursor), max(right, cursor)
-    pw, ph = right - left + 80, bottom - top + 60
-    if pw * ph > 64 * 1024 * 1024:
-        raise ValueError('preview: image exceeds 64 megapixels; shorten preview text or reduce size')
-    bgc = st.get('preview_bg', '#ffffff')
-    bg = (0, 0, 0, 0) if bgc == 'transparent' else tuple(int(bgc.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
-    prev = Image.new('RGBA', (pw, ph), bg)
-    for image, x, y in placements:
-        prev.alpha_composite(image, (x - left + 40, y - top + 30))
-    prev.save(out / f'{name}_preview.png')
+    if not inspect:
+        # preview: assemble text from the atlas using the metrics (tests them)
+        gm = {g['ch']: g for g in glyphs}
+        sample = st.get('preview', ['Level complete!', 'Score: 2 560'])
+        placements = []
+        left = top = 0
+        right, bottom = 0, line_h * len(sample)
+        for i, text in enumerate(sample):
+            cursor = 0
+            previous = None
+            for char in text:
+                if previous is not None:
+                    cursor += pair_offsets.get((ord(previous), ord(char)), 0)
+                if char in gm:
+                    glyph = gm[char]
+                    x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
+                    placements.append((glyph['img'], x, y))
+                    left, top = min(left, x), min(top, y)
+                    right, bottom = max(right, x + glyph['img'].width), max(bottom, y + glyph['img'].height)
+                    cursor += round(glyph['adv'])
+                else:
+                    cursor += space_adv
+                previous = char if char in gm or char == ' ' else None
+            left, right = min(left, cursor), max(right, cursor)
+        pw, ph = right - left + 80, bottom - top + 60
+        if pw * ph > 64 * 1024 * 1024:
+            raise ValueError('preview: image exceeds 64 megapixels; shorten preview text or reduce size')
+        bgc = st.get('preview_bg', '#ffffff')
+        bg = (0, 0, 0, 0) if bgc == 'transparent' else tuple(int(bgc.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
+        prev = Image.new('RGBA', (pw, ph), bg)
+        for image, x, y in placements:
+            prev.alpha_composite(image, (x - left + 40, y - top + 30))
+        prev.save(out / f'{name}_preview.png')
 
-    sheet = Image.new('RGBA', (W, H), (255, 255, 255, 255))
-    sheet.alpha_composite(atlas)
-    sheet.save(out / f'{name}_atlas_on_white.png')
+        sheet = Image.new('RGBA', (W, H), (255, 255, 255, 255))
+        sheet.alpha_composite(atlas)
+        sheet.save(out / f'{name}_atlas_on_white.png')
     return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
             'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H),
             'clipped_glyphs': clipped_glyphs if inspect else []}

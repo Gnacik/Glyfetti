@@ -10,7 +10,7 @@ from PIL import Image
 import pytest
 
 from glyfetti.cli import main
-from glyfetti.engine import FONTS_DIR
+from glyfetti.engine import FONTS_DIR, build
 from glyfetti.quality import POLISH, inspect_atlas, inspect_style
 from glyfetti.server import make_server
 
@@ -43,6 +43,21 @@ def test_real_inspection_reads_rendered_atlas_and_metrics():
         assert glyph["codepoint"].startswith("U+")
     image = Image.open(io.BytesIO(base64.b64decode(report["atlas_png"].partition(",")[2])))
     assert list(image.size) == report["atlas"]
+
+
+def test_inspection_build_skips_preview_sheets(tmp_path):
+    source = tmp_path / "style.json"
+    source.write_text(json.dumps(small_style()), encoding="utf-8")
+    build(source, out_dir=tmp_path / "out", inspect=True)
+    assert sorted(path.name for path in (tmp_path / "out").iterdir()) == ["quality_test.fnt", "quality_test.json", "quality_test.png"]
+
+
+def test_effects_exceeding_padding_are_reported_as_clipped(monkeypatch):
+    monkeypatch.setattr("glyfetti.engine.effect_padding", lambda *args: 1)
+    style = dict(small_style(), outline={"color": "#442211", "width": 6})
+    report = inspect_style(style)
+    assert report["summary"]["clipped"] == 3
+    assert {item["char"] for item in report["issues"] if item["code"] == "clipped"} == set("AąV")
 
 
 def test_missing_character_is_an_error_and_preserves_selected_coverage():
@@ -109,6 +124,32 @@ def test_editor_inspect_endpoint_is_authenticated_and_returns_png():
             with pytest.raises(HTTPError) as rejected:
                 urlopen(Request(url + "/api/inspect", data=data))
             assert rejected.value.code == 403
+        finally:
+            server.shutdown()
+            worker.join(timeout=5)
+
+
+def test_editor_inspect_and_preview_resolve_relative_fonts_alike(tmp_path, monkeypatch):
+    (tmp_path / "local.ttf").write_bytes((FONTS_DIR / "TitanOne-Regular.ttf").read_bytes())
+    monkeypatch.chdir(tmp_path)
+    with make_server(0) as server:
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        url = "http://127.0.0.1:" + str(server.server_port)
+        try:
+            with urlopen(url + "/api/catalog") as response:
+                token = json.load(response)["token"]
+            for font, expected in (("local.ttf", 400), ("TitanOne-Regular.ttf", 200)):
+                data = json.dumps(dict(small_style(), font=font)).encode()
+                for path in ("/api/preview", "/api/inspect"):
+                    req = Request(url + path, data=data,
+                                  headers={"X-Glyfetti-Token": token, "Content-Type": "application/json"})
+                    try:
+                        with urlopen(req) as response:
+                            status = response.status
+                    except HTTPError as error:
+                        status = error.code
+                    assert (font, path, status) == (font, path, expected)
         finally:
             server.shutdown()
             worker.join(timeout=5)

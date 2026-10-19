@@ -11,6 +11,12 @@
 - Keep font/effect geometry editable and preserve all image processing on the local machine.
 - Validate file types and sizes; include regression tests for transparent PNGs, JPGs, malformed inputs and authenticated HTTP requests.
 
+- Fix reference analysis for EXIF-rotated JPEGs and tightly cropped transparent PNGs; decode only PNG/JPEG.
+- Serve editor requests on threads so long inspections no longer block previews; inspection skips preview sheets.
+- Resolve `/api/inspect` fonts like editor previews and share style preparation between MCP and the inspector.
+- Take the reference size limit from `MAX_REFERENCE_BYTES` everywhere, including the editor.
+- Add tests for clipping detection and MCP `analyze_reference_image`.
+
 ## 0.1.5a1
 
 - Add an optional stdio MCP server with preset/font discovery, native coverage

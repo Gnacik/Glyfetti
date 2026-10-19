@@ -2,7 +2,7 @@
 import base64
 import binascii
 import copy
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 import os
@@ -15,6 +15,7 @@ import webbrowser
 import zipfile
 
 from .engine import build, FONTS_DIR
+from .reference import MAX_REFERENCE_BYTES
 from .validation import DATA_DIR, validate_style
 
 WEB_DIR = Path(__file__).parent / 'web'
@@ -22,7 +23,7 @@ MAX_BODY = 256 * 1024
 MAX_REFERENCE_BODY = 6 * 1024 * 1024
 
 
-class LocalHTTPServer(HTTPServer):
+class LocalHTTPServer(ThreadingHTTPServer):
     # SO_REUSEADDR on Windows allows two live servers to bind the same port,
     # leaving the older renderer answering requests after a restart.
     allow_reuse_address = os.name != 'nt'
@@ -109,7 +110,7 @@ def make_server(port=8765):
             if not self.allowed():
                 return self.respond(403, {'error': 'Use the loopback URL printed by glyfetti serve.'})
             if self.path == '/api/catalog':
-                return self.respond(200, {**catalog(), 'token': token})
+                return self.respond(200, {**catalog(), 'token': token, 'max_reference_bytes': MAX_REFERENCE_BYTES})
             files = {'/': ('index.html', 'text/html; charset=utf-8'),
                      '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                      '/style.css': ('style.css', 'text/css; charset=utf-8')}
@@ -130,7 +131,7 @@ def make_server(port=8765):
                     return self.respond(413, {'error': 'Request is too large.'})
                 style = json.loads(self.rfile.read(length))
                 if self.path == '/api/reference':
-                    from .reference import MAX_REFERENCE_BYTES, analyze_reference
+                    from .reference import analyze_reference
                     if not isinstance(style, dict):
                         raise ValueError('Expected reference image and base style JSON.')
                     encoded = style.get('image', '')
@@ -146,7 +147,7 @@ def make_server(port=8765):
                     return self.respond(200, analyze_reference(image, style.get('style')))
                 if self.path == '/api/inspect':
                     from .quality import inspect_style
-                    return self.respond(200, inspect_style(style, base=Path.cwd(), include_atlas=True))
+                    return self.respond(200, inspect_style(style, base=FONTS_DIR, include_atlas=True))
                 if self.path == '/api/expand':
                     return self.respond(200, {'style': validate_style(style)})
                 if self.path == '/api/validate':
