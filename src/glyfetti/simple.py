@@ -69,7 +69,7 @@ def expand_simple(style):
     if options.get('glow'):
         shadow.update(enabled=True, color=options['glow'], dx=0, dy=0, blur=12 * scale, opacity=.8)
     defaults = {
-        'font': 'Titan One', 'size': 90, 'chars': DEFAULT_CHARS, 'atlas_width': 2048,
+        'font': 'Titan One', 'size': 90, **({} if 'charset' in style else {'chars': DEFAULT_CHARS}), 'atlas_width': 2048,
         'preview': ['Level Complete!', 'Score: 2 560'], 'preview_bg': '#F5F1E8',
         'fill': {'stops': [[index / (len(fill) - 1), color] for index, color in enumerate(fill)]},
         'outline': {'color': outline_color, 'width': 0 if outline == 'none' else width},

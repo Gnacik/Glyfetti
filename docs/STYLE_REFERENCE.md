@@ -123,12 +123,14 @@ unchanged. Update absolute font paths when moving expanded styles to another com
 | `variation` | list of numbers or object | – | variable-font axes, e.g. `{"wght": 800, "wdth": 75}` |
 | `size` | px | **required** | font size in the atlas; don't scale in-game text above this |
 | `supersample` | 1–4 | 3 | render at N× scale, then downscale (smoother edges, slower) |
-| `chars` | string | **required** | character set for the atlas (duplicates and spaces are skipped; space is always added) |
+| `chars` | string | **required** unless `charset` | character set for the atlas (duplicates and spaces are skipped; space is always added) |
+| `charset` | name or list | – | named sets appended to `chars`: `ascii`, `latin1`, `latin-ext-a`, `cyrillic`, `polish`, `font` (whole font cmap, max 4096 characters) |
 | `atlas_width` | px | 1024 | atlas width; height is picked as a power of 2 |
 | `max_atlas_size` | px | 8192 | maximum atlas width and height; oversized exports fail without cropping |
 | `atlas_packing` | `maxrects` / `shelf` | `maxrects` | non-rotating compact packing with a shelf fallback |
 | `kerning` | bool | `true` | export horizontal advance pairs and apply them in previews |
 | `kerning_script` | OpenType tag | `latn` | default-language script for GPOS kern; falls back to DFLT |
+| `fnt_format` | `text` / `xml` / `binary` | `text` | AngelCode BMFont `.fnt` flavour (binary = version 3); CLI `--fnt-format` overrides |
 | `tracking` | px | 0 | extra letter spacing; negative pulls letters together and merges outlines |
 | `line_height` | multiplier | 1.15 | line height relative to font metrics |
 | `condense` | 0.5–1.5 | 1.0 | horizontal glyph scaling (condensed < 1) |
@@ -321,7 +323,7 @@ Any other TTF/OTF font works too. `glyfetti check-font <file>` lists missing cha
 | File | Contents |
 |---|---|
 | `<name>.png` | atlas with transparency |
-| `<name>.fnt` | BMFont (text) metrics – Godot, libGDX, Phaser, Cocos, Defold… |
+| `<name>.fnt` | BMFont metrics (text, XML or binary per `fnt_format`) – Godot, libGDX, Phaser, Cocos, Defold… |
 | `<name>.json` | metrics for the Unity importer (TextMeshPro) |
 | `<name>_preview.png` | text assembled from the atlas – tests metrics and looks |
 | `<name>_atlas_on_white.png` | atlas on a white background for browsing |

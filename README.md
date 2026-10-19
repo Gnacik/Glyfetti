@@ -48,7 +48,7 @@ and keeps the look in a text file you can tweak, diff and reuse.
   font, so playful fonts like Chewy or Sniglet become usable for Polish text.
 - ↔️ **Font kerning:** horizontal pair spacing from GPOS and legacy `kern`, shared by previews, BMFont and Unity exports.
 - 🧩 **Compact atlases:** deterministic MaxRects packing with transparent gutters and a shelf fallback.
-- 📦 **Exports:** PNG atlas with alpha, BMFont text `.fnt` (Godot, libGDX, Phaser, Cocos, Defold…),
+- 📦 **Exports:** PNG atlas with alpha, BMFont `.fnt` – text, XML or binary (Godot, libGDX, Phaser, Cocos, Defold…),
   JSON metrics, preview image.
 - 🎮 **Unity TextMeshPro package:** creates a TMP Font Asset from the atlas and ships a shader that keeps
   the baked colors (stock TMP bitmap shaders only use alpha).
@@ -277,6 +277,9 @@ See [setup, tools and examples](docs/MCP.md) and the [client config template](ex
 }
 ```
 
+Instead of (or together with) a literal `chars` string, `"charset"` adds named sets: `ascii`, `latin1`, `latin-ext-a`,
+`cyrillic`, `polish`, or `font` for every character in the font cmap (up to 4096), e.g. `"charset": ["latin1", "latin-ext-a"]`.
+
 Every parameter is documented in the **[Style Reference](docs/STYLE_REFERENCE.md)**.
 
 ## Presets
@@ -320,7 +323,8 @@ console output.
 ## Godot, libGDX, Phaser, Cocos, Defold
 
 Use the `.fnt` + `.png` pair – it is the standard AngelCode BMFont text format that these engines import
-natively or through a small loader.
+natively or through a small loader. Set `"fnt_format": "xml"` or `"binary"` (or `glyfetti build --fnt-format`) for loaders that expect
+the XML or binary (version 3) flavour; all three carry the same chars and kerning pairs.
 
 ## Command line
 
@@ -335,7 +339,7 @@ glyfetti expand STYLE.json [-o expanded.json]
 
 glyfetti validate STYLE.json [STYLE2.json …]
 
-glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N]
+glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N] [--fnt-format text|xml|binary]
 glyfetti inspect STYLE.json [-o report.json] [--strict]
 glyfetti reference IMAGE.png [--style STYLE.json] [-o OUT.style.json]
 glyfetti gallery [FOLDER] [-o gallery.png]

@@ -46,7 +46,7 @@ zapisany jest w pliku tekstowym, który łatwo zmienić, porównać i użyć pon
 - 🤸 **Skaczące litery** (`jitter`): obrót i przesunięcie każdego znaku dla efektu ręcznego liternictwa.
 - 🇵🇱 **Automatyczne polskie znaki:** brakujące ą ć ę ń ś ź ż są składane z akcentów zawartych w foncie,
   więc fonty takie jak Chewy czy Sniglet nadają się do polskich tekstów.
-- 📦 **Eksport:** atlas PNG z przezroczystością, BMFont `.fnt` (Godot, libGDX, Phaser, Cocos, Defold…),
+- 📦 **Eksport:** atlas PNG z przezroczystością, BMFont `.fnt` – tekstowy, XML lub binarny (Godot, libGDX, Phaser, Cocos, Defold…),
   metryki JSON, podgląd.
 - 🎮 **Paczka Unity TextMeshPro:** tworzy TMP Font Asset z atlasu i zawiera shader zachowujący kolory
   (standardowe shadery bitmapowe TMP biorą tylko alfę).
@@ -172,6 +172,9 @@ Patrz [instrukcja i narzędzia](docs/MCP.pl.md) oraz [szablon konfiguracji](exam
   <img src="docs/images/layers.png" alt="Warstwy Glyfetti: wypełnienie, obrys, bok 3D, bevel, połysk, cień" width="100%">
 </p>
 
+Zamiast (lub obok) dosłownego `chars` pole `"charset"` dodaje nazwane zestawy: `ascii`, `latin1`, `latin-ext-a`,
+`cyrillic`, `polish` albo `font` – wszystkie znaki z cmap fontu (do 4096), np. `"charset": ["latin1", "latin-ext-a"]`.
+
 Wszystkie parametry opisuje **[dokumentacja stylów](docs/STYLE_REFERENCE.pl.md)**.
 
 ## Presety
@@ -289,7 +292,8 @@ Importer jest **eksperymentalny**. Jeśli nie działa w Twojej wersji Unity/TMP,
 
 ## Godot, libGDX, Phaser, Cocos, Defold
 
-Użyj pary `.fnt` + `.png`, czyli standardowego formatu AngelCode BMFont.
+Użyj pary `.fnt` + `.png`, czyli standardowego formatu AngelCode BMFont. `"fnt_format": "xml"` albo `"binary"` (lub `glyfetti build --fnt-format`)
+zapisuje wariant XML lub binarny (wersja 3) z tymi samymi znakami i parami kerningu.
 
 ## FAQ
 

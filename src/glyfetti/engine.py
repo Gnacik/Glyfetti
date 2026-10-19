@@ -17,6 +17,7 @@ from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
 from .packing import pack_atlas, shelf_pack as shelf_pack
 from .kerning import read_kerning
+from .bmfont import FORMATS, bmfont_bytes
 
 
 def hex2rgb(h):
@@ -26,12 +27,20 @@ def hex2rgb(h):
 
 def over(dst, rgb, alpha):
     """Alpha-composite warstwy (rgb HxWx3, alpha HxW) na dst (HxWx4, premultiplied=False)."""
-    a = alpha[..., None]
-    da = dst[..., 3:4]
+    rows = np.flatnonzero(alpha.any(axis=1))
+    if not len(rows):
+        return dst
+    cols = np.flatnonzero(alpha.any(axis=0))
+    box = slice(rows[0], rows[-1] + 1), slice(cols[0], cols[-1] + 1)
+    if np.ndim(rgb) == 3:
+        rgb = rgb[box]
+    d = dst[box]
+    a = alpha[box][..., None]
+    da = d[..., 3:4]
     out_a = a + da * (1 - a)
     safe = np.where(out_a > 1e-6, out_a, 1)
-    dst[..., :3] = (rgb * a + dst[..., :3] * da * (1 - a)) / safe
-    dst[..., 3:4] = out_a
+    d[..., :3] = (rgb * a + d[..., :3] * da * (1 - a)) / safe
+    d[..., 3:4] = out_a
     return dst
 
 
@@ -43,8 +52,32 @@ def grow(mask, r):
     return np.maximum(mask, np.clip(r + 0.5 - d, 0, 1))
 
 
+def shift_int(a, dx, dy):
+    H, W = a.shape
+    out = np.zeros_like(a)
+    if abs(dx) < W and abs(dy) < H:
+        out[max(dy, 0):H + min(dy, 0), max(dx, 0):W + min(dx, 0)] = a[max(-dy, 0):H + min(-dy, 0), max(-dx, 0):W + min(-dx, 0)]
+    return out
+
+
 def shift(a, dx, dy):
-    return ndi.shift(a, (dy, dx), order=1, mode='constant')
+    x0, y0 = math.floor(dx), math.floor(dy)
+    fx, fy = dx - x0, dy - y0
+    out = np.zeros_like(a)
+    for wy, iy in ((1 - fy, y0), (fy, y0 + 1)):
+        for wx, ix in ((1 - fx, x0), (fx, x0 + 1)):
+            if wx * wy > 1e-9:
+                out += np.float32(wx * wy) * shift_int(a, ix, iy)
+    return out
+
+
+def blur(a, sigma, f):
+    if f <= 1 or sigma < 4 * f:
+        return ndi.gaussian_filter(a, sigma)
+    H, W = a.shape
+    small = Image.fromarray(np.ascontiguousarray(a, np.float32), 'F').resize((-(-W // f), -(-H // f)), Image.BOX)
+    small = ndi.gaussian_filter(np.asarray(small), math.sqrt(sigma ** 2 - f ** 2 / 4) / f)
+    return np.asarray(Image.fromarray(small, 'F').resize((W, H), Image.BILINEAR))
 
 
 def render_glyph(ch, font, S, pad):
@@ -77,7 +110,7 @@ def style_glyph(m, st, S):
     if sh and sh.get('enabled', True):
         a = shift(outline_mask, sh['dx'] * S, sh['dy'] * S)
         if sh.get('blur', 0) > 0:
-            a = ndi.gaussian_filter(a, sh['blur'] * S)
+            a = blur(a, sh['blur'] * S, S)
         over(out, hex2rgb(sh['color']), a * sh['opacity'])
 
     # 2) extrude (hard base under the outline)
@@ -88,7 +121,7 @@ def style_glyph(m, st, S):
         for k in range(1, depth + 1):
             acc = np.maximum(acc, shift(outline_mask, 0, k))
         if ex.get('blur', 0) > 0:
-            acc = ndi.gaussian_filter(acc, ex['blur'] * S)
+            acc = blur(acc, ex['blur'] * S, S)
         over(out, hex2rgb(ex['color']), acc * ex.get('opacity', 1.0))
 
     # 3) obrys
@@ -114,12 +147,13 @@ def style_glyph(m, st, S):
     cols = np.stack([hex2rgb(s[1]) for s in stops])
     rgb = np.stack([np.interp(t, pos, cols[:, c]) for c in range(3)], -1) * np.ones((1, W, 1))
     inner = m.copy()
+    gl = st.get('gloss')
+    bv = st.get('bevel')
+    dist = ndi.distance_transform_edt(m > 0.5) if any(x and x.get('enabled', True) for x in (bv, gl)) else None
 
     # 5) bevel – lighting from a height map (inner distance field)
-    bv = st.get('bevel')
     if bv and bv.get('enabled', True):
-        d = ndi.distance_transform_edt(m > 0.5)
-        hgt = np.clip(d / (bv['size'] * S), 0, 1)
+        hgt = np.clip(dist / (bv['size'] * S), 0, 1)
         hgt = 1 - (1 - hgt) ** 2                       # rounded profile
         hgt = ndi.gaussian_filter(hgt, bv.get('soften', 1.0) * S)
         gy, gx = np.gradient(hgt)
@@ -133,9 +167,8 @@ def style_glyph(m, st, S):
         rgb = rgb + (hex2rgb(bv['shadow_color']) - rgb) * lo
 
     # 6) gloss – soft highlight in the upper part of the letter
-    gl = st.get('gloss')
     if gl and gl.get('enabled', True):
-        er = ndi.distance_transform_edt(m > 0.5) > gl['inset'] * S
+        er = dist > gl['inset'] * S
         band = np.clip(1 - (np.arange(H) - y0) / max((y1 - y0) * gl['height'], 1), 0, 1)[:, None]
         g = ndi.gaussian_filter(er * band, gl['blur'] * S) * gl['opacity']
         rgb = rgb + (hex2rgb(gl['color']) - rgb) * g[..., None]
@@ -214,6 +247,7 @@ def prepare_style(style, base, text=None):
 
 
 FONTS_DIR = DATA_DIR / 'fonts'
+MAX_FONT_CHARS = 4096
 
 
 def effect_padding(st, font, chars, scale):
@@ -288,8 +322,11 @@ def shaped_glyph(ch, font, st, S, pad):
     return m, (bx, by), adv
 
 
-def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None):
+def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None):
     st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
+    fnt_format = fnt_format or st.get('fnt_format', 'text')
+    if fnt_format not in FORMATS:
+        raise ValueError(f"fnt_format: must be one of {', '.join(FORMATS)}")
     maximum = st.get('max_atlas_size', 8192)
     if st.get('atlas_width', 1024) > maximum:
         raise ValueError('atlas_width: exceeds max_atlas_size')
@@ -308,6 +345,11 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     from fontTools.ttLib import TTFont as _TT
     with _TT(str(font_path)) as source:
         _cm = source.getBestCmap() or {}
+    names = st.get('charset', [])
+    if 'font' in ([names] if isinstance(names, str) else names) and not preview_only:
+        chars = list(dict.fromkeys(chars + [chr(c) for c in sorted(_cm) if chr(c).isprintable() and not chr(c).isspace()]))
+        if len(chars) > MAX_FONT_CHARS:
+            raise ValueError(f'charset: font has {len(chars)} characters, more than {MAX_FONT_CHARS}; use named charsets or chars')
     skipped = ''.join(c for c in chars if ord(c) not in _cm)
     chars = [c for c in chars if ord(c) in _cm]
     pad = effect_padding(st, font, chars, S)
@@ -352,25 +394,18 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     base_y = round(asc / S + st['outline']['width'])
     line_h = round((asc + desc) / S * st.get('line_height', 1.15))
     name = st['name']
-    lines = [f'info face="{name}" size={size} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=2,2',
-             f'common lineHeight={line_h} base={base_y} scaleW={W} scaleH={H} pages=1 packed=0',
-             f'page id=0 file="{name}.png"', f'chars count={len(glyphs) + 1}']
     space_adv = round(font.getlength(' ') / S * st.get('condense', 1.0) + st.get('tracking', 0))
-    lines.append(f'char id=32 x=0 y=0 width=0 height=0 xoffset=0 yoffset=0 xadvance={space_adv} page=0 chnl=15')
+    fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)]
     for g, (x, y) in zip(glyphs, pos):
         atlas.paste(g['img'], (x, y))
         w, h = g['img'].size
         g.update(x=x, y=y, xoff=round(-g['ox']), yoff=round(base_y - g['oy']))
-        lines.append(f"char id={ord(g['ch'])} x={x} y={y} width={w} height={h} "
-                     f"xoffset={g['xoff']} yoffset={g['yoff']} xadvance={round(g['adv'])} page=0 chnl=15")
-
-    lines.append(f'kernings count={len(kernings)}')
-    lines.extend(f"kerning first={pair['first']} second={pair['second']} amount={pair['amount']}" for pair in kernings)
+        fnt_chars.append(dict(id=ord(g['ch']), x=x, y=y, width=w, height=h, xoffset=g['xoff'], yoffset=g['yoff'], xadvance=round(g['adv'])))
 
     out = Path(out_dir) if out_dir else base / 'out'
     out.mkdir(parents=True, exist_ok=True)
     atlas.save(out / f'{name}.png')
-    (out / f'{name}.fnt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, f'{name}.png', fnt_chars, kernings))
     # JSON dla importera Unity (TextMeshPro)
     jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +

@@ -123,12 +123,14 @@ rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fo
 | `variation` | lista liczb lub obiekt | – | osie fontu zmiennego, np. `{"wght": 800, "wdth": 75}` |
 | `size` | px | **wymagany** | rozmiar fontu w atlasie; nie powiększaj tekstu w grze powyżej tej wartości |
 | `supersample` | 1–4 | 3 | renderowanie w N× większej skali i zmniejszenie (gładkie krawędzie, ale wolniej) |
-| `chars` | string | **wymagany** | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
+| `chars` | string | **wymagany**, chyba że jest `charset` | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
+| `charset` | nazwa lub lista | – | nazwane zestawy dopisywane do `chars`: `ascii`, `latin1`, `latin-ext-a`, `cyrillic`, `polish`, `font` (cała cmap fontu, maks. 4096 znaków) |
 | `atlas_width` | px | 1024 | szerokość atlasu; wysokość dobierana jako potęga 2 |
 | `max_atlas_size` | px | 8192 | maksymalna szerokość i wysokość atlasu; przekroczenie limitu zgłasza błąd |
 | `atlas_packing` | `maxrects` / `shelf` | `maxrects` | kompaktowe pakowanie bez obrotu z wariantem awaryjnym w rzędach |
 | `kerning` | bool | `true` | eksport poziomych korekt par i ich użycie w podglądzie |
 | `kerning_script` | tag OpenType | `latn` | skrypt języka domyślnego dla GPOS kern; wariant awaryjny DFLT |
+| `fnt_format` | `text` / `xml` / `binary` | `text` | wariant AngelCode BMFont `.fnt` (binary = wersja 3); CLI `--fnt-format` ma pierwszeństwo |
 | `tracking` | px | 0 | dodatkowy odstęp między literami; ujemny zbliża litery i zlewa obrysy |
 | `line_height` | mnożnik | 1.15 | wysokość linii względem metryk fontu |
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |
@@ -321,7 +323,7 @@ Każdy inny font TTF/OTF też zadziała. `glyfetti check-font <plik>` pokazuje, 
 | Plik | Zawartość |
 |---|---|
 | `<name>.png` | atlas z przezroczystością |
-| `<name>.fnt` | metryki w formacie BMFont (tekstowy) – Godot, libGDX, Phaser, Cocos, Defold… |
+| `<name>.fnt` | metryki w formacie BMFont (tekstowy, XML lub binarny wg `fnt_format`) – Godot, libGDX, Phaser, Cocos, Defold… |
 | `<name>.json` | metryki dla importera Unity (TextMeshPro) |
 | `<name>_preview.png` | tekst złożony z atlasu – test metryk i wyglądu |
 | `<name>_atlas_on_white.png` | atlas na białym tle do przeglądania |

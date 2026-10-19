@@ -10,6 +10,21 @@ from jsonschema import Draft202012Validator
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT if (ROOT / 'schema/style.schema.json').is_file() else Path(__file__).parent / 'data'
 
+ASCII = ''.join(map(chr, range(0x20, 0x7F)))
+CHARSETS = {
+    'ascii': ASCII,
+    'latin1': ASCII + ''.join(map(chr, range(0xA1, 0x100))),
+    'latin-ext-a': ''.join(map(chr, range(0x100, 0x180))),
+    'cyrillic': ''.join(map(chr, [*range(0x400, 0x460), 0x490, 0x491])),
+    'polish': ASCII + 'ĄĆĘŁŃÓŚŹŻąćęłńóśźż„”«»–—…€',
+}
+
+
+def charset_chars(style):
+    names = style.get('charset', [])
+    names = [names] if isinstance(names, str) else names
+    return ''.join(dict.fromkeys(style.get('chars', '') + ''.join(CHARSETS.get(name, '') for name in names)))
+
 
 def validate_style(style):
     """Accept either source format and return an independent normalized raw style."""
@@ -50,6 +65,7 @@ def validate_style(style):
     for key in ('size', 'supersample', 'atlas_width', 'max_atlas_size', 'order'):
         if key in style:
             style[key] = int(style[key])
+    style['chars'] = charset_chars(style) or ' '
     if style.get('jitter') and 'seed' in style['jitter']:
         style['jitter']['seed'] = int(style['jitter']['seed'])
     return style
