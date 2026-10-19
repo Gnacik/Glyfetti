@@ -41,14 +41,9 @@ def _foreground(rgb, alpha):
 
     difference = np.max(np.abs(rgb.astype(np.int16) - background), axis=2)
     similar = difference <= max(32, float(np.percentile(deviations, 85)) + 16)
-    seeds = np.zeros((height, width), dtype=bool)
-    seeds[0] = similar[0]
-    seeds[-1] = similar[-1]
-    seeds[:, 0] = similar[:, 0]
-    seeds[:, -1] = similar[:, -1]
-    # Connected background removal keeps enclosed holes of A, O, etc.
-    background_mask = ndi.binary_propagation(seeds, mask=similar)
-    return ~background_mask, 'background', _hex(background)
+    # Remove background-colored counters (holes) inside A, O, B, etc.
+    # Border-connected flood fill would incorrectly mark them as ink.
+    return ~similar, 'background', _hex(background)
 
 
 def analyze_reference(image_bytes, base_style):
