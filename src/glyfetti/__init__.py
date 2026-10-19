@@ -2,5 +2,5 @@
 from .engine import build
 from .title import build_title
 
-__version__ = "0.1.5a1"
+__version__ = "0.2.0a1"
 __all__ = ["build", "build_title", "__version__"]
