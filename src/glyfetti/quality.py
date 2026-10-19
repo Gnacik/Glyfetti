@@ -29,6 +29,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
     seen = set()
     rendered = set()
     rectangles = []
+    alpha_channel = atlas.getchannel('A')
 
     def issue(code, severity, message, char=None):
         item = {"code": code, "severity": severity, "message": message}
@@ -85,7 +86,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
             continue
         rendered.add(cp)
         rectangles.append((x, y, x + w, y + h, row))
-        alpha = atlas.getchannel("A").crop((x, y, x + w, y + h))
+        alpha = alpha_channel.crop((x, y, x + w, y + h))
         if alpha.getbbox() is None:
             mark("transparent", "error", "Atlas rectangle contains no visible pixels.")
         if abs(xo) > max(64, metadata.get("size", 32) * 2) or abs(yo) > max(64, metadata.get("size", 32) * 2):
@@ -112,7 +113,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
             match["issues"].append("clipped")
         issue("clipped", "error", "Effects touch the pre-crop render buffer edge; artwork may be clipped.", ch)
 
-    requested_codes = {ord(ch) for ch in requested if ch != "\n" and not ch.isspace() or ch == " "}
+    requested_codes = {ord(ch) for ch in requested if ch == " " or not ch.isspace()}
     for cp in sorted(requested_codes - rendered):
         if 0 <= cp <= 0x10FFFF:
             issue("missing", "error", "Requested character is missing from the exported atlas.", chr(cp))
