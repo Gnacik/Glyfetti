@@ -56,6 +56,7 @@ stdout carries the protocol. Do not put shell banners before the launch command.
 | `expand_style` | Validate simple/mixed/raw JSON and return full raw settings. |
 | `preview_style` | Return an inline PNG plus metrics at draft quality, without creating export folders. |
 | `export_style` | Save a full-quality atlas ZIP or transparent title PNG, plus raw style JSON. |
+| `analyze_reference_image` | Extract gradient colors and estimated outline from a local PNG/JPEG (`image` path and `style` dictionary). |
 
 Both rendering tools accept `mode: "atlas"` or `mode: "title"` and an optional
 `text` string. Actual newlines create separate preview/title lines. Text replaces
