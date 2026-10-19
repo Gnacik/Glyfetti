@@ -267,9 +267,10 @@ def shaped_glyph(ch, font, st, S, pad):
         m = np.asarray(Image.fromarray((m * 255).astype(np.uint8)).resize((nw, H0), Image.LANCZOS), np.float32) / 255.0
         bx = bx * cond
         bbox = (bbox[0] * cond, bbox[1], bbox[2] * cond, bbox[3])
-        # pad so effects still fit
-        m = np.pad(m, ((0, 0), (pad, pad)))
-        bx += pad
+        extra = pad - S * (math.floor(pad * cond) // S)
+        if extra > 0:
+            m = np.pad(m, ((0, 0), (extra, extra)))
+            bx += extra
     if st.get('embolden', 0) > 0:
         m = grow(m, st['embolden'] * S)
     jit = st.get('jitter')
