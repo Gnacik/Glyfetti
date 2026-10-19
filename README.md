@@ -242,7 +242,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Copy the generated server entry into your MCP client's settings. The client launches
-`glyfetti mcp` over stdio. Eight tools list presets/fonts, check font coverage,
+`glyfetti mcp` over stdio. Nine tools list presets/fonts, check font coverage,
 expand styles, return actual PNG previews, and export full-quality assets. Exported
 files have local paths and MCP resource URIs; earlier exports are not overwritten.
 The base CLI/editor still supports Python 3.10 without installing MCP dependencies.
