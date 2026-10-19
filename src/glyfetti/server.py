@@ -121,7 +121,7 @@ def make_server(port=8765):
         def do_POST(self):
             if not self.allowed() or not secrets.compare_digest(self.headers.get('X-Glyfetti-Token', ''), token):
                 return self.respond(403, {'error': 'Invalid editor session. Reload the page.'})
-            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate', '/api/expand', '/api/reference'):
+            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate', '/api/expand', '/api/reference', '/api/inspect'):
                 return self.respond(404, {'error': 'Not found'})
             try:
                 length = int(self.headers.get('Content-Length', '0'))
@@ -144,6 +144,9 @@ def make_server(port=8765):
                     except binascii.Error as error:
                         raise ValueError('Invalid reference image encoding.') from error
                     return self.respond(200, analyze_reference(image, style.get('style')))
+                if self.path == '/api/inspect':
+                    from .quality import inspect_style
+                    return self.respond(200, inspect_style(style, base=Path.cwd(), include_atlas=True))
                 if self.path == '/api/expand':
                     return self.respond(200, {'style': validate_style(style)})
                 if self.path == '/api/validate':
