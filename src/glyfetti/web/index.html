@@ -18,6 +18,14 @@
       <label class="range-label" for="simple-playful">Playful <output id="simple-playful-value">0.1</output></label><input id="simple-playful" type="range" min="0" max="1" step="0.05" value="0.1">
       <button id="apply-simple" type="button" disabled>Create style</button>
     </details>
+    <details class="reference-builder"><summary>Match colors from a reference image</summary>
+      <p>Choose a cropped PNG/JPG of lettering on a transparent or plain background. Glyfetti estimates its fill gradient and outline; your font and effect geometry stay editable.</p>
+      <label for="reference-file">Reference image (up to 4 MiB)</label>
+      <input id="reference-file" type="file" accept="image/png,image/jpeg">
+      <img id="reference-image" class="reference-thumb" alt="Selected lettering reference" hidden>
+      <button id="analyze-reference" type="button" disabled>Extract palette and outline</button>
+      <p id="reference-result" role="status" aria-live="polite"></p>
+    </details>
     <label for="font">Typeface</label><select id="font"></select>
     <details><summary>Use your own font</summary><label for="font-path">Absolute TTF / OTF path on this computer</label><input id="font-path" type="text" placeholder="C:\Fonts\MyFont.ttf"><button type="button" id="use-font">Use font</button></details>
     <label for="text">02 / Your words</label><textarea id="text" rows="3" maxlength="1000" spellcheck="false">Level Complete!

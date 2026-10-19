@@ -19,6 +19,11 @@ def main(argv=None):
     title.add_argument('--align', choices=['left', 'center', 'right'])
     title.add_argument('-o', '--out', help='output PNG (default: <style dir>/out/<name>_title.png)')
 
+    reference = sub.add_parser('reference', help='extract fill colors and approximate outline from a PNG/JPG')
+    reference.add_argument('image', help='local PNG or JPG with isolated lettering')
+    reference.add_argument('--style', help='base style JSON (default: honey_gold preset)')
+    reference.add_argument('-o', '--out', help='result JSON (default: <image>.style.json)')
+
     g = sub.add_parser('gallery', help='render all presets in a folder into one gallery PNG')
     g.add_argument('folder', nargs='?')
     g.add_argument('-o', '--out', default='gallery.png')
@@ -81,6 +86,22 @@ def run(a):
             target.write_text(content, 'utf-8')
         else:
             print(content, end='')
+    elif a.cmd == 'reference':
+        import json
+        from .engine import resolve_font
+        from .reference import analyze_reference
+        from .validation import DATA_DIR
+        image = Path(a.image)
+        base = Path(a.style) if a.style else DATA_DIR / 'presets' / 'honey_gold.json'
+        source_style = json.loads(base.read_text('utf-8'))
+        result = analyze_reference(image.read_bytes(), source_style)
+        font_path, _ = resolve_font(dict(result['style'], auto_diacritics=False), base.parent)
+        result['style']['font'] = str(font_path.resolve())
+        output = Path(a.out) if a.out else image.with_suffix('.style.json')
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(result['style'], ensure_ascii=False, indent=2) + '\n', 'utf-8')
+        print(f"Reference style saved: {output}")
+        print(result['analysis']['warning'])
     elif a.cmd == 'validate':
         import json
         from .validation import validate_style

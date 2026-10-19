@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Extract approximate fill gradients and outlines from isolated PNG/JPEG lettering references.
+- Add reference analysis to the local editor, CLI (`glyfetti reference`) and MCP (`analyze_reference_image`).
+- Keep font/effect geometry editable and preserve all image processing on the local machine.
+- Validate file types and sizes; include regression tests for transparent PNGs, JPGs, malformed inputs and authenticated HTTP requests.
+
 ## 0.1.5a1
 
 - Add an optional stdio MCP server with preset/font discovery, native coverage

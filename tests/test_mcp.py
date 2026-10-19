@@ -46,7 +46,7 @@ def test_generated_config_uses_current_python_and_absolute_output(tmp_path, caps
 @pytest.mark.anyio
 async def test_tool_discovery_presets_fonts_and_schema(client):
     tools = (await client.list_tools()).tools
-    assert {tool.name for tool in tools} == {'list_presets', 'get_preset', 'list_fonts', 'check_font', 'expand_style', 'preview_style', 'export_style'}
+    assert {tool.name for tool in tools} == {'list_presets', 'get_preset', 'list_fonts', 'check_font', 'expand_style', 'preview_style', 'export_style', 'analyze_reference_image'}
     hints = {tool.name: tool.annotations for tool in tools}
     assert hints['get_preset'].read_only_hint
     assert not hints['export_style'].destructive_hint

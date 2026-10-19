@@ -167,6 +167,26 @@ button:disabled {
   background:transparent;
   color:var(--ink);
 }
+input[type=file] {
+  display:block;
+  width:100%;
+  max-width:100%;
+  margin-top:10px;
+  font:inherit;
+}
+.reference-thumb {
+  display:block;
+  max-width:100%;
+  max-height:180px;
+  object-fit:contain;
+  margin-top:12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+.reference-thumb[hidden] { display:none; }
+.reference-builder button { width:100%; }
+#reference-result { overflow-wrap:anywhere; }
+
 #reset {
   width:100%;
   margin-top:24px;

@@ -62,6 +62,57 @@ async function preview() {
   finally { rendering = false; if (pending) preview(); }
 }
 function selectPreset() { style = structuredClone(presets[Number($('preset').value)]); sync(); schedule(); }
+$('reference-file').addEventListener('change', () => {
+  const file = $('reference-file').files[0];
+  $('analyze-reference').disabled = !file || !style;
+  $('reference-result').textContent = '';
+  if (file) {
+    const url = URL.createObjectURL(file);
+    const image = $('reference-image');
+    if (image.dataset.objectUrl) URL.revokeObjectURL(image.dataset.objectUrl);
+    image.dataset.objectUrl = url;
+    image.src = url;
+    image.hidden = false;
+  } else {
+    const image = $('reference-image');
+    if (image.dataset.objectUrl) URL.revokeObjectURL(image.dataset.objectUrl);
+    image.removeAttribute('src');
+    delete image.dataset.objectUrl;
+    image.hidden = true;
+  }
+});
+function imageAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read reference image.'));
+    reader.readAsDataURL(file);
+  });
+}
+$('analyze-reference').addEventListener('click', async () => {
+  const file = $('reference-file').files[0];
+  if (!file) return;
+  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 4 * 1024 * 1024) {
+    message('Choose a PNG/JPG reference smaller than 4 MiB.', true); return;
+  }
+  $('analyze-reference').disabled = true;
+  message('Analyzing reference image locally…');
+  try {
+    const image = await imageAsDataURL(file);
+    const response = await request('reference', { image, style: structuredClone(style) });
+    const result = await response.json();
+    style = result.style;
+    sync(); schedule();
+    $('reference-result').textContent = result.analysis.fill_colors.join(' · ') +
+      (result.analysis.outline_detected ? ' · Outline: ' + style.outline.color : ' · No outline detected') +
+      '. Approximation only; font and effect geometry are unchanged.';
+  } catch (error) {
+    message(error.message, true);
+    $('reference-result').textContent = error.message;
+  } finally {
+    $('analyze-reference').disabled = false;
+  }
+});
 $('controls').addEventListener('submit', event => event.preventDefault());
 $('preset').addEventListener('change', selectPreset); $('reset').addEventListener('click', selectPreset);
 $('output-mode').addEventListener('change', () => { syncMode(); schedule(); });
