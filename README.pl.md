@@ -61,6 +61,8 @@ zapisany jest w pliku tekstowym, który łatwo zmienić, porównać i użyć pon
 git clone https://github.com/Gnacik/glyfetti.git
 cd glyfetti
 pip install -e .
+# albo, po publikacji na PyPI:
+# pip install glyfetti
 
 glyfetti build presets/honey_gold.json              # pełny atlas do presets/out/
 glyfetti build presets/fire.json --preview-only     # szybki podgląd

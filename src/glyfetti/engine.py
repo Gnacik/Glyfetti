@@ -9,12 +9,13 @@ import json, math
 import os
 import tempfile
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
-from .packing import pack_atlas, shelf_pack
+from .packing import pack_atlas, shelf_pack as shelf_pack
 from .kerning import read_kerning
 
 
@@ -287,7 +288,7 @@ def shaped_glyph(ch, font, st, S, pad):
     return m, (bx, by), adv
 
 
-def build(style_path, out_dir=None, preview_only=False, inspect=False):
+def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None):
     st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
     maximum = st.get('max_atlas_size', 8192)
     if st.get('atlas_width', 1024) > maximum:
@@ -311,27 +312,37 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False):
     chars = [c for c in chars if ord(c) in _cm]
     pad = effect_padding(st, font, chars, S)
 
-    glyphs = []
-    clipped_glyphs = []
+    shaped = []
     for ch in chars:
         m, (bx, by), adv = shaped_glyph(ch, font, st, S, pad)
-        st['_line_top'] = by - asc
-        st['_line_bottom'] = by
-        rgba = style_glyph(m, st, S)
+        shaped.append((ch, m, bx, by, adv, dict(st, _line_top=by - asc, _line_bottom=by)))
+
+    def render(item):
+        ch, m, bx, by, adv, gst = item
+        rgba = style_glyph(m, gst, S)
+        clipped = False
         if inspect:
             # Inspect BEFORE cropping the transparent padding: final glyph rectangles
             # are intentionally tight and cannot reveal render-buffer clipping.
             alpha = rgba[..., 3]
-            if (alpha[0].max() > 1 / 255 or alpha[-1].max() > 1 / 255
-                    or alpha[:, 0].max() > 1 / 255 or alpha[:, -1].max() > 1 / 255):
-                clipped_glyphs.append(ch)
+            clipped = bool(alpha[0].max() > 1 / 255 or alpha[-1].max() > 1 / 255
+                           or alpha[:, 0].max() > 1 / 255 or alpha[:, -1].max() > 1 / 255)
         img = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
         img = img.resize((max(1, round(img.width / S)), max(1, round(img.height / S))), Image.LANCZOS)
         bb = img.getbbox() or (0, 0, 1, 1)
         img = img.crop(bb)
         # baseline and left edge position after scaling and cropping
         ox, oy = bx / S - bb[0], by / S - bb[1]
-        glyphs.append(dict(ch=ch, img=img, ox=ox, oy=oy, adv=adv))
+        return dict(ch=ch, img=img, ox=ox, oy=oy, adv=adv), clipped
+
+    workers = max(1, min(workers or os.cpu_count() or 1, len(shaped)))
+    if workers == 1:
+        rendered = [render(item) for item in shaped]
+    else:
+        with ThreadPoolExecutor(workers) as pool:
+            rendered = list(pool.map(render, shaped))
+    glyphs = [g for g, _ in rendered]
+    clipped_glyphs = [g['ch'] for g, clipped in rendered if clipped]
 
     pos, H, packing = pack_atlas([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum, st.get('atlas_packing', 'maxrects'))
     kernings = read_kerning(font_path, chars + [' '], size, st.get('condense', 1), st.get('variation'), st.get('kerning_script', 'latn')) if st.get('kerning', True) else []

@@ -63,6 +63,8 @@ and keeps the look in a text file you can tweak, diff and reuse.
 git clone https://github.com/Gnacik/glyfetti.git
 cd glyfetti
 pip install -e .
+# or, once published on PyPI:
+# pip install glyfetti
 
 # render a preset into presets/out/
 glyfetti build presets/honey_gold.json
@@ -333,7 +335,7 @@ glyfetti expand STYLE.json [-o expanded.json]
 
 glyfetti validate STYLE.json [STYLE2.json …]
 
-glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only]
+glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N]
 glyfetti inspect STYLE.json [-o report.json] [--strict]
 glyfetti reference IMAGE.png [--style STYLE.json] [-o OUT.style.json]
 glyfetti gallery [FOLDER] [-o gallery.png]
@@ -397,7 +399,7 @@ games. Check the license of any other font you use.
 ## Contributing
 
 Issues and pull requests are welcome – especially new presets (one JSON file + a gallery tile),
-engine importers, and test reports from different Unity versions. Run `pytest` before submitting.
+engine importers, and test reports from different Unity versions. Install `pip install -e ".[dev]"` and run `ruff check .`, `mypy` and `pytest` before submitting.
 
 ## License
 

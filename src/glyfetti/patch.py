@@ -65,7 +65,6 @@ def patch_font(src, dst, axes=''):
         bn = cm[ord(base)]
         bx0, by0, bx1, by1 = bounds(glyf, bn)
         mx0, my0, mx1, my1 = bounds(glyf, mark)
-        mw = mx1 - mx0
         if mode == 'top':
             dy = (top_upper if base.isupper() else top_lower) - my0
             dx = (bx0 + bx1) / 2 - (mx0 + mx1) / 2
