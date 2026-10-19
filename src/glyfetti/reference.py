@@ -55,9 +55,7 @@ def analyze_reference(image_bytes, base_style):
     if not isinstance(image_bytes, bytes) or not 0 < len(image_bytes) <= MAX_REFERENCE_BYTES:
         raise ValueError('Reference PNG/JPEG must be between 1 byte and 4 MiB.')
     try:
-        with Image.open(BytesIO(image_bytes)) as source:
-            if source.format not in ('PNG', 'JPEG'):
-                raise ValueError('Only PNG and JPEG reference images are supported.')
+        with Image.open(BytesIO(image_bytes), formats=['PNG', 'JPEG']) as source:
             width, height = source.size
             if width < 16 or height < 16 or width * height > MAX_REFERENCE_PIXELS:
                 raise ValueError('Reference dimensions must be at least 16×16 and at most 2.5 megapixels.')
