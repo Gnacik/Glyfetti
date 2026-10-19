@@ -19,6 +19,11 @@ def main(argv=None):
     title.add_argument('--align', choices=['left', 'center', 'right'])
     title.add_argument('-o', '--out', help='output PNG (default: <style dir>/out/<name>_title.png)')
 
+    inspect = sub.add_parser('inspect', help='inspect rendered font atlas, metrics, Polish glyphs and clipping')
+    inspect.add_argument('style', help='style JSON to inspect')
+    inspect.add_argument('-o', '--out', help='save the inspection report as JSON')
+    inspect.add_argument('--strict', action='store_true', help='return nonzero exit code if quality errors are found')
+
     reference = sub.add_parser('reference', help='extract fill colors and approximate outline from a PNG/JPG')
     reference.add_argument('image', help='local PNG or JPG with isolated lettering')
     reference.add_argument('--style', help='base style JSON (default: honey_gold preset)')
@@ -86,6 +91,23 @@ def run(a):
             target.write_text(content, 'utf-8')
         else:
             print(content, end='')
+    elif a.cmd == 'inspect':
+        import json
+        from .quality import inspect_style
+        source = Path(a.style)
+        result = inspect_style(json.loads(source.read_text('utf-8')), base=source.parent)
+        summary = result['summary']
+        print(f"{result['name']}: {summary['glyphs']} glyphs, {summary['errors']} errors, "
+              f"{summary['warnings']} warnings, {summary['missing']} missing, "
+              f"{summary['clipped']} clipped, {summary['kerning_pairs']} kerning pairs")
+        for issue in result['issues']:
+            print(f"  {issue['severity']}: {issue.get('char', '-')!r} [{issue['code']}] {issue['message']}")
+        if a.out:
+            output = Path(a.out)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', 'utf-8')
+            print(f"Report: {output}")
+        return 1 if a.strict and summary['errors'] else 0
     elif a.cmd == 'reference':
         import json
         from .engine import resolve_font
