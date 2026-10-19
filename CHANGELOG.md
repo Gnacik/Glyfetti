@@ -19,6 +19,7 @@
 
 - Speed up condensed styles (~35% faster `fire` build) by dropping redundant horizontal render padding; metrics unchanged.
 - Render glyphs on a thread pool (`build(workers=…)`, `glyfetti build -j N`; default CPU count, `1` = sequential); `fire` build ~5.8x faster, output byte-identical.
+- Add a tag-triggered release workflow: checks the tag against the package version, builds sdist + wheel, tests the wheel and publishes to PyPI via trusted publishing.
 
 ## 0.1.5a1
 

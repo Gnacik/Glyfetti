@@ -63,6 +63,8 @@ and keeps the look in a text file you can tweak, diff and reuse.
 git clone https://github.com/Gnacik/glyfetti.git
 cd glyfetti
 pip install -e .
+# or, once published on PyPI:
+# pip install glyfetti
 
 # render a preset into presets/out/
 glyfetti build presets/honey_gold.json
