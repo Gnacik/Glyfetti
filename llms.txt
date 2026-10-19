@@ -19,4 +19,4 @@ Use Glyfetti when someone needs: golden/candy/3D title text for a mobile or casu
 ## Optional
 
 - [Unity package](https://github.com/Gnacik/glyfetti/tree/main/unity/com.glyfetti.tmp): install via git URL `https://github.com/Gnacik/glyfetti.git?path=/unity/com.glyfetti.tmp`
-- CLI: `glyfetti build STYLE.json`, `glyfetti gallery presets`, `glyfetti check-font FONT.ttf`, `glyfetti patch SRC DST`
+- CLI: `glyfetti build STYLE.json`, `glyfetti inspect STYLE.json`, `glyfetti reference IMAGE.png`, `glyfetti serve`, `glyfetti gallery presets`, `glyfetti check-font FONT.ttf`, `glyfetti patch SRC DST`

@@ -54,6 +54,8 @@ and keeps the look in a text file you can tweak, diff and reuse.
   the baked colors (stock TMP bitmap shaders only use alpha).
 - 🍬 **12 ready-made presets** – gold, candy, ice, fire, magic, comic, silver, UI text and more.
 - 🧾 **JSON Schema** for styles: validation and autocomplete in VS Code.
+- 🔍 **Font Quality Inspector:** per-glyph metrics, Polish coverage and clipping diagnostics (`glyfetti inspect`).
+- 🖼️ **Reference palette extraction:** gradient and outline colors from a lettering image (`glyfetti reference`).
 
 ## Quick start
 
@@ -332,6 +334,8 @@ glyfetti expand STYLE.json [-o expanded.json]
 glyfetti validate STYLE.json [STYLE2.json …]
 
 glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only]
+glyfetti inspect STYLE.json [-o report.json] [--strict]
+glyfetti reference IMAGE.png [--style STYLE.json] [-o OUT.style.json]
 glyfetti gallery [FOLDER] [-o gallery.png]
 glyfetti check-font FONT.ttf [--chars "…"]
 glyfetti patch SRC.ttf DST.ttf [--axes wght=700]
@@ -387,7 +391,8 @@ games. Check the license of any other font you use.
 - [x] `glyfetti serve` – local web UI with live preview and sliders
 - [x] Horizontal GPOS / legacy kerning, MaxRects atlas packing
 - [x] Whole-word "title" mode with a single merged outline
-- [ ] Palette extraction from a reference image
+- [x] Palette extraction from a reference image
+- [x] Font Quality Inspector – atlas, metrics, Polish coverage and clipping diagnostics
 
 ## Contributing
 

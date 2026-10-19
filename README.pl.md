@@ -52,6 +52,8 @@ zapisany jest w pliku tekstowym, który łatwo zmienić, porównać i użyć pon
   (standardowe shadery bitmapowe TMP biorą tylko alfę).
 - 🍬 **12 gotowych presetów**: złoto, cukierki, lód, ogień, magia, komiks, srebro, tekst UI i inne.
 - 🧾 **JSON Schema** stylów: walidacja i podpowiedzi w VS Code.
+- 🔍 **Font Quality Inspector:** metryki glifów, pokrycie polskich znaków i diagnostyka przycięć (`glyfetti inspect`).
+- 🖼️ **Kolory z obrazka referencyjnego:** gradient i obrys z napisu PNG/JPG (`glyfetti reference`).
 
 ## Szybki start
 
@@ -319,6 +321,7 @@ w grach komercyjnych.
 - [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects
 - [x] Tryb „title”: całe słowo ze wspólnym obrysem
 - [x] Podstawowa ekstrakcja gradientu i obrysu z obrazka referencyjnego (PNG/JPG)
+- [x] Font Quality Inspector: atlas, metryki, pokrycie polskich znaków i diagnostyka przycięć
 
 ## Licencja
 
