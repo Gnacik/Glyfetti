@@ -26,7 +26,7 @@ def hex2rgb(h):
 
 
 def over(dst, rgb, alpha):
-    """Alpha-composite warstwy (rgb HxWx3, alpha HxW) na dst (HxWx4, premultiplied=False)."""
+    """Alpha-composite a layer (rgb HxWx3, alpha HxW) onto dst (HxWx4, premultiplied=False)."""
     rows = np.flatnonzero(alpha.any(axis=1))
     if not len(rows):
         return dst
@@ -124,7 +124,7 @@ def style_glyph(m, st, S):
             acc = blur(acc, ex['blur'] * S, S)
         over(out, hex2rgb(ex['color']), acc * ex.get('opacity', 1.0))
 
-    # 3) obrys
+    # 3) outline
     over(out, hex2rgb(st['outline']['color']), outline_mask)
 
     # 3b) side – darker gradient under the outline
@@ -278,7 +278,7 @@ def load_font(st, base):
     font = ImageFont.truetype(str(font_path), size * S)
     var = st.get('variation')
     if var:
-        if isinstance(var, dict):  # np. {"wght": 800, "wdth": 75}
+        if isinstance(var, dict):  # e.g. {"wght": 800, "wdth": 75}
             from fontTools.ttLib import TTFont
             with TTFont(str(font_path)) as source:
                 if 'fvar' not in source:
@@ -322,21 +322,8 @@ def shaped_glyph(ch, font, st, S, pad):
     return m, (bx, by), adv
 
 
-def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None):
-    st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
-    fnt_format = fnt_format or st.get('fnt_format', 'text')
-    if fnt_format not in FORMATS:
-        raise ValueError(f"fnt_format: must be one of {', '.join(FORMATS)}")
-    maximum = st.get('max_atlas_size', 8192)
-    if st.get('atlas_width', 1024) > maximum:
-        raise ValueError('atlas_width: exceeds max_atlas_size')
-    base = Path(style_path).parent
-    font_path, st, font = load_font(st, base)
-    S = st.get('supersample', 3)
-    size = st['size']
-    asc, desc = font.getmetrics()
-    st['_line_top'] = 0
-    st['_line_bottom'] = asc
+def glyph_chars(st, font_path, preview_only):
+    """Requested characters present in the font, plus the skipped ones."""
     if preview_only:
         st['chars'] = ''.join(st.get('preview', ['Level complete!', 'Score: 2 560']))
     chars = list(dict.fromkeys(st['chars'].replace('\n', '')))
@@ -351,9 +338,12 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
         if len(chars) > MAX_FONT_CHARS:
             raise ValueError(f'charset: font has {len(chars)} characters, more than {MAX_FONT_CHARS}; use named charsets or chars')
     skipped = ''.join(c for c in chars if ord(c) not in _cm)
-    chars = [c for c in chars if ord(c) in _cm]
-    pad = effect_padding(st, font, chars, S)
+    return [c for c in chars if ord(c) in _cm], skipped
 
+
+def render_glyphs(chars, font, st, S, asc, inspect=False, workers=None):
+    """Shape, style and downsample every glyph. Returns glyph dicts and clipped characters."""
+    pad = effect_padding(st, font, chars, S)
     shaped = []
     for ch in chars:
         m, (bx, by), adv = shaped_glyph(ch, font, st, S, pad)
@@ -383,75 +373,107 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     else:
         with ThreadPoolExecutor(workers) as pool:
             rendered = list(pool.map(render, shaped))
-    glyphs = [g for g, _ in rendered]
-    clipped_glyphs = [g['ch'] for g, clipped in rendered if clipped]
+    return [g for g, _ in rendered], [g['ch'] for g, clipped in rendered if clipped]
 
-    pos, H, packing = pack_atlas([g['img'].size for g in glyphs], st.get('atlas_width', 1024), 2, maximum, st.get('atlas_packing', 'maxrects'))
-    kernings = read_kerning(font_path, chars + [' '], size, st.get('condense', 1), st.get('variation'), st.get('kerning_script', 'latn')) if st.get('kerning', True) else []
-    pair_offsets = {(pair['first'], pair['second']): pair['amount'] for pair in kernings}
+
+def pack_glyphs(glyphs, st, maximum, base_y):
+    """Place glyphs in the atlas, compose it and return BMFont char records."""
     W = st.get('atlas_width', 1024)
+    pos, H, packing = pack_atlas([g['img'].size for g in glyphs], W, 2, maximum, st.get('atlas_packing', 'maxrects'))
     atlas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    base_y = round(asc / S + st['outline']['width'])
-    line_h = round((asc + desc) / S * st.get('line_height', 1.15))
-    name = st['name']
-    space_adv = round(font.getlength(' ') / S * st.get('condense', 1.0) + st.get('tracking', 0))
-    fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)]
+    fnt_chars = []
     for g, (x, y) in zip(glyphs, pos):
         atlas.paste(g['img'], (x, y))
         w, h = g['img'].size
         g.update(x=x, y=y, xoff=round(-g['ox']), yoff=round(base_y - g['oy']))
         fnt_chars.append(dict(id=ord(g['ch']), x=x, y=y, width=w, height=h, xoffset=g['xoff'], yoffset=g['yoff'], xadvance=round(g['adv'])))
+    return atlas, fnt_chars, packing
 
-    out = Path(out_dir) if out_dir else base / 'out'
-    out.mkdir(parents=True, exist_ok=True)
+
+def write_exports(out, name, fnt_format, size, line_h, base_y, atlas, glyphs, fnt_chars, space_adv, kernings):
+    """Write the atlas PNG, BMFont .fnt and Unity (TextMeshPro) JSON."""
+    W, H = atlas.size
     atlas.save(out / f'{name}.png')
+    fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)] + fnt_chars
     (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, f'{name}.png', fnt_chars, kernings))
-    # JSON dla importera Unity (TextMeshPro)
     jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +
                    [{'id': ord(g['ch']), 'x': g['x'], 'y': g['y'], 'w': g['img'].size[0], 'h': g['img'].size[1],
                      'xo': g['xoff'], 'yo': g['yoff'], 'xa': round(g['adv'])} for g in glyphs]}
     (out / f'{name}.json').write_text(json.dumps(jd, ensure_ascii=False), encoding='utf-8')
 
-    if not inspect:
-        # preview: assemble text from the atlas using the metrics (tests them)
-        gm = {g['ch']: g for g in glyphs}
-        sample = st.get('preview', ['Level complete!', 'Score: 2 560'])
-        placements = []
-        left = top = 0
-        right, bottom = 0, line_h * len(sample)
-        for i, text in enumerate(sample):
-            cursor = 0
-            previous = None
-            for char in text:
-                if previous is not None:
-                    cursor += pair_offsets.get((ord(previous), ord(char)), 0)
-                if char in gm:
-                    glyph = gm[char]
-                    x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
-                    placements.append((glyph['img'], x, y))
-                    left, top = min(left, x), min(top, y)
-                    right, bottom = max(right, x + glyph['img'].width), max(bottom, y + glyph['img'].height)
-                    cursor += round(glyph['adv'])
-                else:
-                    cursor += space_adv
-                previous = char if char in gm or char == ' ' else None
-            left, right = min(left, cursor), max(right, cursor)
-        pw, ph = right - left + 80, bottom - top + 60
-        if pw * ph > 64 * 1024 * 1024:
-            raise ValueError('preview: image exceeds 64 megapixels; shorten preview text or reduce size')
-        bgc = st.get('preview_bg', '#ffffff')
-        bg = (0, 0, 0, 0) if bgc == 'transparent' else tuple(int(bgc.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
-        prev = Image.new('RGBA', (pw, ph), bg)
-        for image, x, y in placements:
-            prev.alpha_composite(image, (x - left + 40, y - top + 30))
-        prev.save(out / f'{name}_preview.png')
 
-        sheet = Image.new('RGBA', (W, H), (255, 255, 255, 255))
-        sheet.alpha_composite(atlas)
-        sheet.save(out / f'{name}_atlas_on_white.png')
+def write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlas):
+    """Assemble preview text from the atlas metrics (tests them) and an atlas sheet on white."""
+    pair_offsets = {(pair['first'], pair['second']): pair['amount'] for pair in kernings}
+    gm = {g['ch']: g for g in glyphs}
+    sample = st.get('preview', ['Level complete!', 'Score: 2 560'])
+    placements = []
+    left = top = 0
+    right, bottom = 0, line_h * len(sample)
+    for i, text in enumerate(sample):
+        cursor = 0
+        previous = None
+        for char in text:
+            if previous is not None:
+                cursor += pair_offsets.get((ord(previous), ord(char)), 0)
+            if char in gm:
+                glyph = gm[char]
+                x, y = cursor + glyph['xoff'], i * line_h + glyph['yoff']
+                placements.append((glyph['img'], x, y))
+                left, top = min(left, x), min(top, y)
+                right, bottom = max(right, x + glyph['img'].width), max(bottom, y + glyph['img'].height)
+                cursor += round(glyph['adv'])
+            else:
+                cursor += space_adv
+            previous = char if char in gm or char == ' ' else None
+        left, right = min(left, cursor), max(right, cursor)
+    pw, ph = right - left + 80, bottom - top + 60
+    if pw * ph > 64 * 1024 * 1024:
+        raise ValueError('preview: image exceeds 64 megapixels; shorten preview text or reduce size')
+    bgc = st.get('preview_bg', '#ffffff')
+    bg = (0, 0, 0, 0) if bgc == 'transparent' else tuple(int(bgc.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4)) + (255,)
+    prev = Image.new('RGBA', (pw, ph), bg)
+    for image, x, y in placements:
+        prev.alpha_composite(image, (x - left + 40, y - top + 30))
+    prev.save(out / f'{name}_preview.png')
+
+    sheet = Image.new('RGBA', atlas.size, (255, 255, 255, 255))
+    sheet.alpha_composite(atlas)
+    sheet.save(out / f'{name}_atlas_on_white.png')
+
+
+def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None):
+    st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
+    fnt_format = fnt_format or st.get('fnt_format', 'text')
+    if fnt_format not in FORMATS:
+        raise ValueError(f"fnt_format: must be one of {', '.join(FORMATS)}")
+    maximum = st.get('max_atlas_size', 8192)
+    if st.get('atlas_width', 1024) > maximum:
+        raise ValueError('atlas_width: exceeds max_atlas_size')
+    base = Path(style_path).parent
+    font_path, st, font = load_font(st, base)
+    S = st.get('supersample', 3)
+    size = st['size']
+    asc, desc = font.getmetrics()
+    st['_line_top'] = 0
+    st['_line_bottom'] = asc
+    chars, skipped = glyph_chars(st, font_path, preview_only)
+    glyphs, clipped_glyphs = render_glyphs(chars, font, st, S, asc, inspect, workers)
+
+    base_y = round(asc / S + st['outline']['width'])
+    atlas, fnt_chars, packing = pack_glyphs(glyphs, st, maximum, base_y)
+    W, H = atlas.size
+    kernings = read_kerning(font_path, chars + [' '], size, st.get('condense', 1), st.get('variation'), st.get('kerning_script', 'latn')) if st.get('kerning', True) else []
+    line_h = round((asc + desc) / S * st.get('line_height', 1.15))
+    name = st['name']
+    space_adv = round(font.getlength(' ') / S * st.get('condense', 1.0) + st.get('tracking', 0))
+
+    out = Path(out_dir) if out_dir else base / 'out'
+    out.mkdir(parents=True, exist_ok=True)
+    write_exports(out, name, fnt_format, size, line_h, base_y, atlas, glyphs, fnt_chars, space_adv, kernings)
+    if not inspect:
+        write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlas)
     return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
             'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H),
             'clipped_glyphs': clipped_glyphs if inspect else []}
-
-
