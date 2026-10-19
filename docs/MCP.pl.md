@@ -56,6 +56,7 @@ protokół. Nie dodawaj banerów tekstowych przed komendą startową.
 | `expand_style` | Walidacja stylu prostego/mieszanego/surowego i zwrot pełnych ustawień. |
 | `preview_style` | Obraz PNG i metryki w jakości roboczej, bez tworzenia katalogu eksportu. |
 | `export_style` | Atlas ZIP lub przezroczysty napis PNG w pełnej jakości oraz JSON stylu. |
+| `analyze_reference_image` | Analiza lokalnego PNG/JPG: gradient, przybliżony obrys i edytowalny styl JSON (parametry `image`, `style`). |
 
 Oba narzędzia renderujące przyjmują `mode: "atlas"` albo `mode: "title"` i opcjonalne
 pole `text`. Rzeczywiste znaki nowej linii tworzą kolejne wiersze. Tekst zastępuje
