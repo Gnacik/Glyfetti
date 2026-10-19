@@ -21,13 +21,14 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
     Returns JSON-serializable diagnostics. A non-exported Polish glyph is shown as
     "not selected", not falsely reported as a missing glyph.
     """
-    width, height = atlas.size
+    pages = list(atlas) if isinstance(atlas, (list, tuple)) else [atlas]
+    width, height = pages[0].size
     issues = []
     glyphs = []
     seen = set()
     rendered = set()
     rectangles = []
-    alpha_channel = atlas.getchannel('A')
+    alpha_channels = [page.getchannel('A') for page in pages]
 
     def issue(code, severity, message, char=None):
         item = {"code": code, "severity": severity, "message": message}
@@ -36,7 +37,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
         issues.append(item)
         return code
 
-    if (metadata.get("scaleW"), metadata.get("scaleH")) != (width, height):
+    if any((metadata.get("scaleW"), metadata.get("scaleH")) != page.size for page in pages):
         issue("atlas_dimensions", "error", "Atlas image dimensions differ from JSON metrics.")
     baseline = metadata.get("baseline", 0)
     line_height = metadata.get("lineHeight", 0)
@@ -51,7 +52,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
         ch = chr(cp)
         row = {
             "char": ch, "id": cp, "codepoint": f"U+{cp:04X}",
-            "x": raw.get("x"), "y": raw.get("y"),
+            "page": raw.get("page", 0), "x": raw.get("x"), "y": raw.get("y"),
             "w": raw.get("w"), "h": raw.get("h"),
             "xo": raw.get("xo"), "yo": raw.get("yo"), "xa": raw.get("xa"),
             "issues": [],
@@ -69,6 +70,10 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
             mark("metrics_type", "error", "Glyph metrics must be integers.")
             continue
         x, y, w, h, xo, yo, adv = coords
+        page = row["page"]
+        if not isinstance(page, int) or not 0 <= page < len(pages):
+            mark("page", "error", "Glyph refers to a missing atlas page.")
+            continue
         if adv <= 0 and not ch.isspace():
             mark("advance", "warning", "Non-positive character advance; text may overlap.")
         if cp == 32:  # Intentional zero-sized space in the exported format.
@@ -83,8 +88,8 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
             mark("bounds", "error", "Glyph rectangle extends beyond atlas texture.")
             continue
         rendered.add(cp)
-        rectangles.append((x, y, x + w, y + h, row))
-        alpha = alpha_channel.crop((x, y, x + w, y + h))
+        rectangles.append((page, x, y, x + w, y + h, row))
+        alpha = alpha_channels[page].crop((x, y, x + w, y + h))
         if alpha.getbbox() is None:
             mark("transparent", "error", "Atlas rectangle contains no visible pixels.")
         if abs(xo) > max(64, metadata.get("size", 32) * 2) or abs(yo) > max(64, metadata.get("size", 32) * 2):
@@ -93,10 +98,10 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
         if xo + w - adv > max(16, metadata.get("size", 32) * .8):
             mark("overhang", "warning", "Glyph extends far beyond its horizontal advance.")
 
-    rectangles.sort(key=lambda item: item[0])
-    for i, (x1, y1, x2, y2, row) in enumerate(rectangles):
-        for ax1, ay1, ax2, ay2, other in rectangles[i + 1:]:
-            if ax1 >= x2:
+    rectangles.sort(key=lambda item: item[:2])
+    for i, (page, x1, y1, x2, y2, row) in enumerate(rectangles):
+        for other_page, ax1, ay1, ax2, ay2, other in rectangles[i + 1:]:
+            if other_page != page or ax1 >= x2:
                 break
             if y1 < ay2 and ay1 < y2:
                 if "overlap" not in row["issues"]:
@@ -133,6 +138,7 @@ def inspect_atlas(atlas, metadata, requested="", clipped=()):
     return {
         "name": metadata.get("name", "font"),
         "atlas": [width, height],
+        "pages": len(pages),
         "metrics": {"size": metadata.get("size"), "baseline": baseline, "line_height": line_height},
         "summary": {
             "glyphs": len(glyphs),
@@ -159,11 +165,18 @@ def inspect_style(style, base=".", include_atlas=False):
         output = root / "out"
         result = build(input_file, out_dir=output, inspect=True)
         metadata = json.loads((output / (result["name"] + ".json")).read_text("utf-8"))
-        with Image.open(output / (result["name"] + ".png")) as image:
-            report = inspect_atlas(image, metadata, raw["chars"], result["clipped_glyphs"])
+        files = metadata.get("pages") or [result["name"] + ".png"]
+        images = [Image.open(output / file) for file in files]
+        try:
+            report = inspect_atlas(images, metadata, raw["chars"], result["clipped_glyphs"])
+        finally:
+            for image in images:
+                image.close()
         report["summary"]["occupancy"] = round(result["occupancy"], 4)
         report["summary"]["packing"] = result["packing"]
         if include_atlas:
-            atlas_bytes = (output / (result["name"] + ".png")).read_bytes()
-            report["atlas_png"] = "data:image/png;base64," + base64.b64encode(atlas_bytes).decode("ascii")
+            pngs = ["data:image/png;base64," + base64.b64encode((output / file).read_bytes()).decode("ascii") for file in files]
+            report["atlas_png"] = pngs[0]
+            if len(pngs) > 1:
+                report["atlas_pngs"] = pngs
         return report

@@ -62,7 +62,7 @@ def validate_style(style):
         raise ValueError('fill.stops: positions must be strictly increasing')
     # JSON Schema accepts 24.0 as an integer; Pillow and bitwise seeds require int.
     style = copy.deepcopy(style)
-    for key in ('size', 'supersample', 'atlas_width', 'max_atlas_size', 'order'):
+    for key in ('size', 'supersample', 'atlas_width', 'max_atlas_size', 'max_pages', 'order'):
         if key in style:
             style[key] = int(style[key])
     style['chars'] = charset_chars(style) or ' '

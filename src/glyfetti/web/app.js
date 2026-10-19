@@ -55,7 +55,7 @@ async function preview() {
     const response = await request(titleMode() ? 'title-preview' : 'preview', style), result = await response.json();
     if (current === revision) {
       $('preview').src = result.image; $('preview').hidden = false; $('placeholder').hidden = true;
-      const info = result.mode === 'title' ? `${result.size.join(' × ')} PNG · ${result.lines} ${result.lines === 1 ? 'line' : 'lines'} · shared effects` : `${result.glyphs} glyphs · ${result.kernings} kern pairs · ${result.atlas.join(' × ')} · ${result.packing} · ${Math.round(result.occupancy * 100)}% occupied`;
+      const info = result.mode === 'title' ? `${result.size.join(' × ')} PNG · ${result.lines} ${result.lines === 1 ? 'line' : 'lines'} · shared effects` : `${result.glyphs} glyphs · ${result.kernings} kern pairs · ${result.atlas.join(' × ')}${result.pages > 1 ? ` × ${result.pages} pages` : ''} · ${result.packing} · ${Math.round(result.occupancy * 100)}% occupied`;
       message(`${info}${result.skipped ? ' · Missing: ' + result.skipped : ''}`, Boolean(result.skipped));
     }
   } catch (error) { if (current === revision) message(error.message, true); }
@@ -146,9 +146,10 @@ function qualityChoose(glyph) {
   ctx.strokeStyle = '#3173b6';
   const advance = origin + (glyph.xa || 0) * scale;
   ctx.beginPath(); ctx.moveTo(advance, 8); ctx.lineTo(advance, 232); ctx.stroke();
-  if (qualityAtlas && glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
-      glyph.x + glyph.w <= qualityAtlas.width && glyph.y + glyph.h <= qualityAtlas.height) {
-    ctx.drawImage(qualityAtlas, glyph.x, glyph.y, glyph.w, glyph.h,
+  const atlas = qualityPage(glyph);
+  if (atlas && glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
+      glyph.x + glyph.w <= atlas.width && glyph.y + glyph.h <= atlas.height) {
+    ctx.drawImage(atlas, glyph.x, glyph.y, glyph.w, glyph.h,
       origin + glyph.xo * scale, top + glyph.yo * scale, glyph.w * scale, glyph.h * scale);
   }
   $('quality-metrics').textContent = (glyph.char === ' ' ? 'SPACE' : glyph.char) + '  ' + glyph.codepoint +
@@ -172,10 +173,11 @@ function qualityGrid() {
     tile.title = glyph.codepoint + ' · ' + (glyph.issues.join(', ') || 'No findings');
     if (glyph.issues.length) tile.classList.add('has-issue');
     const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 58;
-    if (glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
-        glyph.x + glyph.w <= qualityAtlas.width && glyph.y + glyph.h <= qualityAtlas.height) {
+    const atlas = qualityPage(glyph);
+    if (atlas && glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
+        glyph.x + glyph.w <= atlas.width && glyph.y + glyph.h <= atlas.height) {
       const scale = Math.min(60 / glyph.w, 54 / glyph.h, 2.5);
-      canvas.getContext('2d').drawImage(qualityAtlas, glyph.x, glyph.y, glyph.w, glyph.h,
+      canvas.getContext('2d').drawImage(atlas, glyph.x, glyph.y, glyph.w, glyph.h,
         2 + (60 - glyph.w * scale) / 2, 2 + (54 - glyph.h * scale) / 2,
         glyph.w * scale, glyph.h * scale);
     }
@@ -191,14 +193,16 @@ function qualityGrid() {
   } else qualityChoose(matches.find(g => g.id === qualitySelected) || matches[0]);
 }
 
-function qualityPresent(report, image) {
-  qualityReport = report; qualityAtlas = image; qualitySelected = null;
+function qualityPage(glyph) { return qualityAtlas && qualityAtlas[glyph.page || 0]; }
+
+function qualityPresent(report, images) {
+  qualityReport = report; qualityAtlas = images; qualitySelected = null;
   $('quality-results').hidden = false;
   const summary = $('quality-summary'); summary.replaceChildren();
   const stats = report.summary;
   for (const label of [stats.glyphs + ' glyphs', stats.errors + ' errors', stats.warnings + ' warnings',
     stats.missing + ' missing', stats.clipped + ' clipped', stats.kerning_pairs + ' kerning pairs',
-    report.atlas.join(' × ') + ' atlas']) {
+    report.atlas.join(' × ') + ' atlas' + (report.pages > 1 ? ' × ' + report.pages + ' pages' : '')]) {
     const item = document.createElement('span'); item.textContent = label; summary.append(item);
   }
   const polish = $('quality-polish'); polish.replaceChildren();
@@ -222,7 +226,7 @@ $('quality-search').addEventListener('input', qualityGrid);
 $('quality-problems').addEventListener('change', qualityGrid);
 $('quality-save').addEventListener('click', () => {
   if (!qualityReport) return;
-  const { atlas_png, ...report } = qualityReport;
+  const { atlas_png, atlas_pngs, ...report } = qualityReport;
   download(new Blob([JSON.stringify(report, null, 2) + '\n'], { type: 'application/json' }),
     report.name + '.quality.json');
 });
@@ -233,12 +237,12 @@ $('quality-run').addEventListener('click', async () => {
   const snapshotRevision = revision;
   try {
     const response = await request('inspect', exportStyle()), report = await response.json();
-    const image = new Image();
-    await new Promise((resolve, reject) => {
-      image.onload = resolve; image.onerror = () => reject(new Error('Could not display atlas image.'));
-      image.src = report.atlas_png;
-    });
-    qualityPresent(report, image);
+    const images = await Promise.all((report.atlas_pngs || [report.atlas_png]).map(source => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image); image.onerror = () => reject(new Error('Could not display atlas image.'));
+      image.src = source;
+    })));
+    qualityPresent(report, images);
     $('quality-state').textContent = report.summary.errors + ' errors · ' + report.summary.warnings + ' warnings. ' +
       (revision === snapshotRevision ? 'Full-quality inspection complete.' : 'Style changed during inspection; rerun.');
   } catch (error) {
@@ -267,7 +271,7 @@ $('apply-simple').addEventListener('click', async () => {
   if ($('simple-palette').value === 'custom') simple.base_color = $('simple-color').value;
   else simple.palette = $('simple-palette').value;
   const draft = { name: 'custom_style', simple };
-  for (const key of ['font', 'size', 'chars', 'preview', 'preview_bg', 'variation', 'title', 'kerning', 'kerning_script', 'atlas_width', 'max_atlas_size', 'atlas_packing', 'supersample']) if (key in style) draft[key] = structuredClone(style[key]);
+  for (const key of ['font', 'size', 'chars', 'preview', 'preview_bg', 'variation', 'title', 'kerning', 'kerning_script', 'atlas_width', 'max_atlas_size', 'max_pages', 'atlas_packing', 'supersample']) if (key in style) draft[key] = structuredClone(style[key]);
   try { const response = await request('expand', draft); style = (await response.json()).style; sync(); schedule(); }
   catch (error) { message(error.message, true); }
   finally { $('apply-simple').disabled = false; }

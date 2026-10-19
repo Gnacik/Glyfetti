@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
-from .packing import pack_atlas, shelf_pack as shelf_pack
+from .packing import pack_pages, shelf_pack as shelf_pack
 from .kerning import read_kerning
 from .bmfont import FORMATS, bmfont_bytes
 
@@ -376,34 +376,45 @@ def render_glyphs(chars, font, st, S, asc, inspect=False, workers=None):
     return [g for g, _ in rendered], [g['ch'] for g, clipped in rendered if clipped]
 
 
-def pack_glyphs(glyphs, st, maximum, base_y):
-    """Place glyphs in the atlas, compose it and return BMFont char records."""
+def page_files(name, pages):
+    """Atlas file names: <name>.png for one page, <name>_0.png … (equal length) for more."""
+    if pages == 1:
+        return [f'{name}.png']
+    digits = len(str(pages - 1))
+    return [f'{name}_{i:0{digits}d}.png' for i in range(pages)]
+
+
+def pack_glyphs(glyphs, st, maximum, base_y, max_pages=16):
+    """Place glyphs on atlas pages, compose them and return BMFont char records."""
     W = st.get('atlas_width', 1024)
-    pos, H, packing = pack_atlas([g['img'].size for g in glyphs], W, 2, maximum, st.get('atlas_packing', 'maxrects'))
-    atlas = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    pos, H, packing, pages = pack_pages([g['img'].size for g in glyphs], W, 2, maximum, st.get('atlas_packing', 'maxrects'), max_pages)
+    atlases = [Image.new('RGBA', (W, H), (0, 0, 0, 0)) for _ in range(pages)]
     fnt_chars = []
-    for g, (x, y) in zip(glyphs, pos):
-        atlas.paste(g['img'], (x, y))
+    for g, (page, x, y) in zip(glyphs, pos):
+        atlases[page].paste(g['img'], (x, y))
         w, h = g['img'].size
-        g.update(x=x, y=y, xoff=round(-g['ox']), yoff=round(base_y - g['oy']))
-        fnt_chars.append(dict(id=ord(g['ch']), x=x, y=y, width=w, height=h, xoffset=g['xoff'], yoffset=g['yoff'], xadvance=round(g['adv'])))
-    return atlas, fnt_chars, packing
+        g.update(page=page, x=x, y=y, xoff=round(-g['ox']), yoff=round(base_y - g['oy']))
+        fnt_chars.append(dict(id=ord(g['ch']), x=x, y=y, width=w, height=h, xoffset=g['xoff'], yoffset=g['yoff'], xadvance=round(g['adv']), page=page))
+    return atlases, fnt_chars, packing
 
 
-def write_exports(out, name, fnt_format, size, line_h, base_y, atlas, glyphs, fnt_chars, space_adv, kernings):
-    """Write the atlas PNG, BMFont .fnt and Unity (TextMeshPro) JSON."""
-    W, H = atlas.size
-    atlas.save(out / f'{name}.png')
+def write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings):
+    """Write the atlas PNG pages, BMFont .fnt and Unity (TextMeshPro) JSON."""
+    W, H = atlases[0].size
+    files = page_files(name, len(atlases))
+    for atlas, file in zip(atlases, files):
+        atlas.save(out / file)
     fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)] + fnt_chars
-    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, f'{name}.png', fnt_chars, kernings))
-    jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, 'kernings': kernings,
+    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, files, fnt_chars, kernings))
+    multi = len(files) > 1
+    jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, **({'pages': files} if multi else {}), 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +
                    [{'id': ord(g['ch']), 'x': g['x'], 'y': g['y'], 'w': g['img'].size[0], 'h': g['img'].size[1],
-                     'xo': g['xoff'], 'yo': g['yoff'], 'xa': round(g['adv'])} for g in glyphs]}
+                     'xo': g['xoff'], 'yo': g['yoff'], 'xa': round(g['adv']), **({'page': g['page']} if multi else {})} for g in glyphs]}
     (out / f'{name}.json').write_text(json.dumps(jd, ensure_ascii=False), encoding='utf-8')
 
 
-def write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlas):
+def write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlases):
     """Assemble preview text from the atlas metrics (tests them) and an atlas sheet on white."""
     pair_offsets = {(pair['first'], pair['second']): pair['amount'] for pair in kernings}
     gm = {g['ch']: g for g in glyphs}
@@ -438,12 +449,13 @@ def write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlas):
         prev.alpha_composite(image, (x - left + 40, y - top + 30))
     prev.save(out / f'{name}_preview.png')
 
-    sheet = Image.new('RGBA', atlas.size, (255, 255, 255, 255))
-    sheet.alpha_composite(atlas)
-    sheet.save(out / f'{name}_atlas_on_white.png')
+    for atlas, file in zip(atlases, page_files(name, len(atlases))):
+        sheet = Image.new('RGBA', atlas.size, (255, 255, 255, 255))
+        sheet.alpha_composite(atlas)
+        sheet.save(out / f'{Path(file).stem}_atlas_on_white.png')
 
 
-def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None):
+def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None, max_pages=None):
     st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
     fnt_format = fnt_format or st.get('fnt_format', 'text')
     if fnt_format not in FORMATS:
@@ -462,8 +474,8 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     glyphs, clipped_glyphs = render_glyphs(chars, font, st, S, asc, inspect, workers)
 
     base_y = round(asc / S + st['outline']['width'])
-    atlas, fnt_chars, packing = pack_glyphs(glyphs, st, maximum, base_y)
-    W, H = atlas.size
+    atlases, fnt_chars, packing = pack_glyphs(glyphs, st, maximum, base_y, max_pages or st.get('max_pages', 16))
+    W, H = atlases[0].size
     kernings = read_kerning(font_path, chars + [' '], size, st.get('condense', 1), st.get('variation'), st.get('kerning_script', 'latn')) if st.get('kerning', True) else []
     line_h = round((asc + desc) / S * st.get('line_height', 1.15))
     name = st['name']
@@ -471,9 +483,9 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
 
     out = Path(out_dir) if out_dir else base / 'out'
     out.mkdir(parents=True, exist_ok=True)
-    write_exports(out, name, fnt_format, size, line_h, base_y, atlas, glyphs, fnt_chars, space_adv, kernings)
+    write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings)
     if not inspect:
-        write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlas)
-    return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
-            'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H),
+        write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlases)
+    return {'glyphs': len(glyphs), 'atlas': (W, H), 'pages': len(atlases), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
+            'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H * len(atlases)),
             'clipped_glyphs': clipped_glyphs if inspect else []}

@@ -126,7 +126,8 @@ unchanged. Update absolute font paths when moving expanded styles to another com
 | `chars` | string | **required** unless `charset` | character set for the atlas (duplicates and spaces are skipped; space is always added) |
 | `charset` | name or list | – | named sets appended to `chars`: `ascii`, `latin1`, `latin-ext-a`, `cyrillic`, `polish`, `font` (whole font cmap, max 4096 characters) |
 | `atlas_width` | px | 1024 | atlas width; height is picked as a power of 2 |
-| `max_atlas_size` | px | 8192 | maximum atlas width and height; oversized exports fail without cropping |
+| `max_atlas_size` | px | 8192 | maximum atlas page width and height; overflow spills into extra pages, never crops |
+| `max_pages` | 1–256 | 16 | maximum atlas pages; `1` = fail instead of spilling; CLI `--max-pages` overrides |
 | `atlas_packing` | `maxrects` / `shelf` | `maxrects` | non-rotating compact packing with a shelf fallback |
 | `kerning` | bool | `true` | export horizontal advance pairs and apply them in previews |
 | `kerning_script` | OpenType tag | `latn` | default-language script for GPOS kern; falls back to DFLT |
@@ -322,11 +323,11 @@ Any other TTF/OTF font works too. `glyfetti check-font <file>` lists missing cha
 
 | File | Contents |
 |---|---|
-| `<name>.png` | atlas with transparency |
+| `<name>.png` | atlas with transparency (multi-page: `<name>_0.png`, `<name>_1.png`, … listed in `.fnt` and JSON `pages`) |
 | `<name>.fnt` | BMFont metrics (text, XML or binary per `fnt_format`) – Godot, libGDX, Phaser, Cocos, Defold… |
 | `<name>.json` | metrics for the Unity importer (TextMeshPro) |
 | `<name>_preview.png` | text assembled from the atlas – tests metrics and looks |
-| `<name>_atlas_on_white.png` | atlas on a white background for browsing |
+| `<name>_atlas_on_white.png` | atlas on a white background for browsing (one per page, e.g. `<name>_0_atlas_on_white.png`) |
 
 ---
 
