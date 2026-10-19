@@ -129,6 +129,7 @@ rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fo
 | `atlas_packing` | `maxrects` / `shelf` | `maxrects` | kompaktowe pakowanie bez obrotu z wariantem awaryjnym w rzędach |
 | `kerning` | bool | `true` | eksport poziomych korekt par i ich użycie w podglądzie |
 | `kerning_script` | tag OpenType | `latn` | skrypt języka domyślnego dla GPOS kern; wariant awaryjny DFLT |
+| `fnt_format` | `text` / `xml` / `binary` | `text` | wariant AngelCode BMFont `.fnt` (binary = wersja 3); CLI `--fnt-format` ma pierwszeństwo |
 | `tracking` | px | 0 | dodatkowy odstęp między literami; ujemny zbliża litery i zlewa obrysy |
 | `line_height` | mnożnik | 1.15 | wysokość linii względem metryk fontu |
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |
@@ -321,7 +322,7 @@ Każdy inny font TTF/OTF też zadziała. `glyfetti check-font <plik>` pokazuje, 
 | Plik | Zawartość |
 |---|---|
 | `<name>.png` | atlas z przezroczystością |
-| `<name>.fnt` | metryki w formacie BMFont (tekstowy) – Godot, libGDX, Phaser, Cocos, Defold… |
+| `<name>.fnt` | metryki w formacie BMFont (tekstowy, XML lub binarny wg `fnt_format`) – Godot, libGDX, Phaser, Cocos, Defold… |
 | `<name>.json` | metryki dla importera Unity (TextMeshPro) |
 | `<name>_preview.png` | tekst złożony z atlasu – test metryk i wyglądu |
 | `<name>_atlas_on_white.png` | atlas na białym tle do przeglądania |

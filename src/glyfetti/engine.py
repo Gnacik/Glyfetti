@@ -17,6 +17,7 @@ from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
 from .packing import pack_atlas, shelf_pack as shelf_pack
 from .kerning import read_kerning
+from .bmfont import FORMATS, bmfont_bytes
 
 
 def hex2rgb(h):
@@ -320,8 +321,11 @@ def shaped_glyph(ch, font, st, S, pad):
     return m, (bx, by), adv
 
 
-def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None):
+def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=None, fnt_format=None):
     st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
+    fnt_format = fnt_format or st.get('fnt_format', 'text')
+    if fnt_format not in FORMATS:
+        raise ValueError(f"fnt_format: must be one of {', '.join(FORMATS)}")
     maximum = st.get('max_atlas_size', 8192)
     if st.get('atlas_width', 1024) > maximum:
         raise ValueError('atlas_width: exceeds max_atlas_size')
@@ -384,25 +388,18 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     base_y = round(asc / S + st['outline']['width'])
     line_h = round((asc + desc) / S * st.get('line_height', 1.15))
     name = st['name']
-    lines = [f'info face="{name}" size={size} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=2,2',
-             f'common lineHeight={line_h} base={base_y} scaleW={W} scaleH={H} pages=1 packed=0',
-             f'page id=0 file="{name}.png"', f'chars count={len(glyphs) + 1}']
     space_adv = round(font.getlength(' ') / S * st.get('condense', 1.0) + st.get('tracking', 0))
-    lines.append(f'char id=32 x=0 y=0 width=0 height=0 xoffset=0 yoffset=0 xadvance={space_adv} page=0 chnl=15')
+    fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)]
     for g, (x, y) in zip(glyphs, pos):
         atlas.paste(g['img'], (x, y))
         w, h = g['img'].size
         g.update(x=x, y=y, xoff=round(-g['ox']), yoff=round(base_y - g['oy']))
-        lines.append(f"char id={ord(g['ch'])} x={x} y={y} width={w} height={h} "
-                     f"xoffset={g['xoff']} yoffset={g['yoff']} xadvance={round(g['adv'])} page=0 chnl=15")
-
-    lines.append(f'kernings count={len(kernings)}')
-    lines.extend(f"kerning first={pair['first']} second={pair['second']} amount={pair['amount']}" for pair in kernings)
+        fnt_chars.append(dict(id=ord(g['ch']), x=x, y=y, width=w, height=h, xoffset=g['xoff'], yoffset=g['yoff'], xadvance=round(g['adv'])))
 
     out = Path(out_dir) if out_dir else base / 'out'
     out.mkdir(parents=True, exist_ok=True)
     atlas.save(out / f'{name}.png')
-    (out / f'{name}.fnt').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, f'{name}.png', fnt_chars, kernings))
     # JSON dla importera Unity (TextMeshPro)
     jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +

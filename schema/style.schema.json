@@ -541,6 +541,15 @@
           "default": "latn",
           "description": "OpenType script for the default language kern feature; falls back to DFLT."
         },
+        "fnt_format": {
+          "enum": [
+            "text",
+            "xml",
+            "binary"
+          ],
+          "default": "text",
+          "description": "AngelCode BMFont .fnt flavour: text, XML or binary (version 3)."
+        },
         "atlas_packing": {
           "enum": [
             "maxrects",
@@ -788,6 +797,9 @@
         },
         "kerning_script": {
           "$ref": "#/$defs/raw/properties/kerning_script"
+        },
+        "fnt_format": {
+          "$ref": "#/$defs/raw/properties/fnt_format"
         },
         "atlas_packing": {
           "$ref": "#/$defs/raw/properties/atlas_packing"
