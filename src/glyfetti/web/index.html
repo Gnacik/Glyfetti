@@ -42,6 +42,32 @@ Score: 2 560</textarea>
   <div class="preview-heading"><div><span class="eyebrow">THE PREVIEW</span><h2>Your next great title.</h2></div><label class="background">Background<input type="color" id="background" value="#8b5a2b"></label></div>
   <div class="preview-stage" id="stage"><img id="preview" alt="Rendered preview of your styled text" hidden><span id="placeholder">Your letters are warming up…</span></div>
   <div class="preview-foot"><p id="status" role="status" aria-live="polite">Loading presets…</p><span>Draft preview · export uses full quality</span></div>
+  <details id="quality-panel" class="quality-panel">
+    <summary>Font Quality Inspector · check every glyph</summary>
+    <p>Analyze the full-resolution font atlas, not just the title preview. Inspect Polish letters, baseline and spacing, missing characters, packed rectangles and render-buffer clipping.</p>
+    <div class="quality-actions"><button id="quality-run" type="button" disabled>Inspect full atlas</button><button id="quality-save" type="button" class="secondary" disabled>Save report JSON</button></div>
+    <p id="quality-state" role="status" aria-live="polite">Choose a font style to begin.</p>
+    <div id="quality-results" hidden>
+      <div id="quality-summary" class="quality-summary"></div>
+      <h3>Polish diacritics <small>Exported · not selected · missing</small></h3>
+      <div id="quality-polish" class="quality-polish" aria-label="Polish diacritic coverage"></div>
+      <div class="quality-filters">
+        <label for="quality-search">Find a character / Unicode</label><input id="quality-search" type="search" placeholder="A, ą, U+0104">
+        <label class="toggle" for="quality-problems"><input id="quality-problems" type="checkbox">Only glyphs with issues</label>
+      </div>
+      <div class="quality-workspace">
+        <div id="quality-grid" class="quality-grid" aria-label="Rendered glyphs"></div>
+        <div class="quality-detail">
+          <h3>Selected glyph</h3>
+          <canvas id="quality-detail-canvas" width="300" height="240" aria-label="Enlarged glyph with advance and baseline guides"></canvas>
+          <div id="quality-metrics"></div>
+          <div id="quality-glyph-issues"></div>
+          <p class="quality-legend">Green = baseline · blue = advance · dotted = glyph origin</p>
+        </div>
+      </div>
+      <details><summary>All diagnostic findings</summary><ul id="quality-issues"></ul></details>
+    </div>
+  </details>
   <div class="export"><div><span class="eyebrow">READY FOR YOUR GAME</span><h2>From playground to production.</h2><p id="export-description">Transparent atlas, BMFont metrics, Unity JSON and your style in one ZIP.</p></div><div class="export-actions"><button id="export" disabled>Export atlas ZIP ↗</button><button id="save-style" class="secondary" disabled>Save style JSON</button></div></div>
   <details class="advanced"><summary>Edit raw style JSON</summary><p>Use advanced options or paste a saved style. Font paths must be absolute.</p><label for="json">Style definition</label><textarea id="json" rows="16" spellcheck="false"></textarea><button id="apply-json" type="button">Apply JSON</button></details>
   <p class="note" id="output-note">Preview text characters are added to the exported character set. Missing characters are reported below the preview.</p>

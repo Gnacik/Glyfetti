@@ -42,7 +42,7 @@ function sync() {
   }
   $('json').value = JSON.stringify(style, null, 2);
 }
-function schedule() { revision++; pending = true; $('json').value = JSON.stringify(style, null, 2); clearTimeout(timer); timer = setTimeout(preview, 450); }
+function schedule() { revision++; pending = true; if (qualityReport) $('quality-state').textContent = 'Style changed. Rerun inspection for current results.'; $('json').value = JSON.stringify(style, null, 2); clearTimeout(timer); timer = setTimeout(preview, 450); }
 async function request(endpoint, value) {
   const response = await fetch(`/api/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Glyfetti-Token': token }, body: JSON.stringify(value) });
   if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'Request failed'); }
@@ -127,6 +127,127 @@ for (const [id, change] of [ ['top-color', value => style.fill.stops[0][1] = val
   $(id).addEventListener('input', event => { change(event.target.value); schedule(); });
 }
 function exportStyle() { const result = structuredClone(style); result.chars = [...new Set(result.chars + (result.preview || []).join(''))].join(''); return result; }
+
+let qualityReport = null, qualityAtlas = null, qualitySelected = null, qualityBusy = false;
+
+function qualityChoose(glyph) {
+  qualitySelected = glyph.id;
+  for (const tile of $('quality-grid').querySelectorAll('button')) tile.classList.toggle('selected', Number(tile.dataset.id) === glyph.id);
+  const canvas = $('quality-detail-canvas'), ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const size = Math.max(glyph.w || 1, glyph.h || 1, qualityReport.metrics.size || 1);
+  const scale = Math.min(3.5, 175 / size), origin = 70, baseline = 154;
+  const top = baseline - qualityReport.metrics.baseline * scale;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = '#8b8b8b';
+  ctx.beginPath(); ctx.moveTo(origin, 8); ctx.lineTo(origin, 232); ctx.stroke();
+  ctx.setLineDash([]); ctx.strokeStyle = '#40934b';
+  ctx.beginPath(); ctx.moveTo(8, baseline); ctx.lineTo(292, baseline); ctx.stroke();
+  ctx.strokeStyle = '#3173b6';
+  const advance = origin + (glyph.xa || 0) * scale;
+  ctx.beginPath(); ctx.moveTo(advance, 8); ctx.lineTo(advance, 232); ctx.stroke();
+  if (qualityAtlas && glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
+      glyph.x + glyph.w <= qualityAtlas.width && glyph.y + glyph.h <= qualityAtlas.height) {
+    ctx.drawImage(qualityAtlas, glyph.x, glyph.y, glyph.w, glyph.h,
+      origin + glyph.xo * scale, top + glyph.yo * scale, glyph.w * scale, glyph.h * scale);
+  }
+  $('quality-metrics').textContent = (glyph.char === ' ' ? 'SPACE' : glyph.char) + '  ' + glyph.codepoint +
+    '\nrect: ' + glyph.x + ', ' + glyph.y + ' · ' + glyph.w + ' × ' + glyph.h +
+    '\noffset: ' + glyph.xo + ', ' + glyph.yo + '\nadvance: ' + glyph.xa + ' px' +
+    '\nbaseline: ' + qualityReport.metrics.baseline + ' px\nline height: ' + qualityReport.metrics.line_height + ' px';
+  const notes = qualityReport.issues.filter(item => item.char === glyph.char);
+  $('quality-glyph-issues').textContent = notes.length
+    ? notes.map(item => item.severity + ': ' + item.message).join('\n') : 'No automated issues detected.';
+}
+
+function qualityGrid() {
+  if (!qualityReport || !qualityAtlas) return;
+  const grid = $('quality-grid'); grid.replaceChildren();
+  const query = $('quality-search').value.trim().toLocaleLowerCase(), problematic = $('quality-problems').checked;
+  const matches = qualityReport.glyphs.filter(g => (!problematic || g.issues.length) &&
+    (!query || g.char.toLocaleLowerCase().includes(query) || g.codepoint.toLocaleLowerCase().includes(query)));
+  for (const glyph of matches) {
+    const tile = document.createElement('button');
+    tile.type = 'button'; tile.dataset.id = glyph.id; tile.className = 'quality-tile';
+    tile.title = glyph.codepoint + ' · ' + (glyph.issues.join(', ') || 'No findings');
+    if (glyph.issues.length) tile.classList.add('has-issue');
+    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 58;
+    if (glyph.w > 0 && glyph.h > 0 && glyph.x >= 0 && glyph.y >= 0 &&
+        glyph.x + glyph.w <= qualityAtlas.width && glyph.y + glyph.h <= qualityAtlas.height) {
+      const scale = Math.min(60 / glyph.w, 54 / glyph.h, 2.5);
+      canvas.getContext('2d').drawImage(qualityAtlas, glyph.x, glyph.y, glyph.w, glyph.h,
+        2 + (60 - glyph.w * scale) / 2, 2 + (54 - glyph.h * scale) / 2,
+        glyph.w * scale, glyph.h * scale);
+    }
+    const label = document.createElement('span');
+    label.textContent = (glyph.char === ' ' ? '␠' : glyph.char) + ' · ' + glyph.codepoint;
+    tile.append(canvas, label);
+    tile.addEventListener('click', () => qualityChoose(glyph));
+    grid.append(tile);
+  }
+  if (!matches.length) {
+    const note = document.createElement('p'); note.textContent = 'No glyphs match the filters.'; grid.append(note);
+    $('quality-metrics').textContent = ''; $('quality-glyph-issues').textContent = '';
+  } else qualityChoose(matches.find(g => g.id === qualitySelected) || matches[0]);
+}
+
+function qualityPresent(report, image) {
+  qualityReport = report; qualityAtlas = image; qualitySelected = null;
+  $('quality-results').hidden = false;
+  const summary = $('quality-summary'); summary.replaceChildren();
+  const stats = report.summary;
+  for (const label of [stats.glyphs + ' glyphs', stats.errors + ' errors', stats.warnings + ' warnings',
+    stats.missing + ' missing', stats.clipped + ' clipped', stats.kerning_pairs + ' kerning pairs',
+    report.atlas.join(' × ') + ' atlas']) {
+    const item = document.createElement('span'); item.textContent = label; summary.append(item);
+  }
+  const polish = $('quality-polish'); polish.replaceChildren();
+  for (const entry of report.polish) {
+    const cell = document.createElement('span'); cell.className = entry.status;
+    cell.textContent = entry.char; cell.title = entry.char + ' — ' + entry.status.replace('_', ' ');
+    polish.append(cell);
+  }
+  const findings = $('quality-issues'); findings.replaceChildren();
+  if (!report.issues.length) {
+    const item = document.createElement('li'); item.textContent = 'No automated issues detected.'; findings.append(item);
+  }
+  for (const issue of report.issues) {
+    const item = document.createElement('li');
+    item.textContent = issue.severity.toUpperCase() + ' ' + (issue.char || '') + ' [' + issue.code + ']: ' + issue.message;
+    findings.append(item);
+  }
+  qualityGrid(); $('quality-save').disabled = false;
+}
+$('quality-search').addEventListener('input', qualityGrid);
+$('quality-problems').addEventListener('change', qualityGrid);
+$('quality-save').addEventListener('click', () => {
+  if (!qualityReport) return;
+  const { atlas_png, ...report } = qualityReport;
+  download(new Blob([JSON.stringify(report, null, 2) + '\n'], { type: 'application/json' }),
+    report.name + '.quality.json');
+});
+$('quality-run').addEventListener('click', async () => {
+  if (qualityBusy || !style) return;
+  qualityBusy = true; $('quality-run').disabled = true;
+  $('quality-state').textContent = 'Building the full-size font atlas and checking metrics…';
+  const snapshotRevision = revision;
+  try {
+    const response = await request('inspect', exportStyle()), report = await response.json();
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve; image.onerror = () => reject(new Error('Could not display atlas image.'));
+      image.src = report.atlas_png;
+    });
+    qualityPresent(report, image);
+    $('quality-state').textContent = report.summary.errors + ' errors · ' + report.summary.warnings + ' warnings. ' +
+      (revision === snapshotRevision ? 'Full-quality inspection complete.' : 'Style changed during inspection; rerun.');
+  } catch (error) {
+    $('quality-state').textContent = 'Inspection failed: ' + error.message;
+  } finally {
+    qualityBusy = false; $('quality-run').disabled = false;
+  }
+});
+
 $('save-style').addEventListener('click', () => download(new Blob([JSON.stringify(exportStyle(), null, 2) + '\n'], { type: 'application/json' }), `${style.name}.style.json`));
 $('export').addEventListener('click', async () => {
   exporting = true; $('export').disabled = true; const snapshot = exportStyle(), title = titleMode(); message(title ? 'Rendering your title at full quality…' : 'Building full-quality atlas. This can take a minute…');
@@ -157,6 +278,6 @@ $('apply-simple').addEventListener('click', async () => {
     const catalog = await response.json(); presets = catalog.presets; token = catalog.token;
     presets.forEach((preset, index) => { const option = document.createElement('option'); option.value = index; option.textContent = preset.name.replaceAll('_', ' '); $('preset').append(option); });
     catalog.fonts.forEach(path => { const option = document.createElement('option'); option.value = path; option.textContent = path.split(/[\\/]/).at(-1).replace(/\.ttf$/i, ''); $('font').append(option); });
-    selectPreset(); $('export').disabled = false; $('save-style').disabled = false; $('apply-simple').disabled = false;
+    selectPreset(); $('export').disabled = false; $('save-style').disabled = false; $('apply-simple').disabled = false; $('quality-run').disabled = false;
   } catch (error) { message(error.message, true); }
 })();

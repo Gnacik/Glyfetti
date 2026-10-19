@@ -119,6 +119,33 @@ Maksymalnie 4 MiB, 2,5 megapiksela, PNG/JPG. Wielobarwne tło może zostać odrz
 Asystenci podłączeni przez MCP mają też narzędzie `analyze_reference_image`
 dla lokalnej ścieżki pliku.
 
+## Font Quality Inspector
+
+W lokalnym edytorze (`glyfetti serve`) otwórz **Font Quality Inspector**
+i kliknij **Inspect full atlas**. Narzędzie renderuje pełny atlas w katalogu
+tymczasowym, pokazuje klikalną siatkę wszystkich znaków, powiększenie litery,
+linie bazową i advance, metryki Unicode, stan polskich znaków i listę problemów.
+Można wyszukiwać znaki i wyświetlać tylko glify z błędami.
+
+Sprawdzane są: brakujące znaki, puste/przezroczyste glify, wyjście prostokątów
+poza atlas, nakładanie prostokątów, błędne metryki, skrajne odstępy, duże korekty
+kerningu i dotykanie granic **oryginalnego bufora renderowania** (ryzyko obcięcia
+cienia/obrysu). Samo dotykanie granicy przyciętego glifu nie jest błędem.
+
+Polskie litery mają trzy stany: **wyeksportowany**, **pominięty w zestawie**
+i **żądany, ale brakujący**. Brak znaku, którego nie wybrano, nie jest błędem.
+Diagnostyka nie ocenia automatycznie estetyki i ręcznego projektu znaków.
+
+```bash
+glyfetti inspect presets/honey_gold.json -o font-quality.json
+glyfetti inspect presets/honey_gold.json --strict
+```
+
+Opcja `--strict` zwraca kod wyjścia 1 przy błędach jakości.
+Raport JSON zawiera dane glifów, metryki i diagnostykę; w edytorze podgląd
+pochodzi z faktycznie wyrenderowanego PNG. Funkcja nie nadpisuje eksportów.
+W MCP dostępne jest narzędzie `inspect_font`.
+
 ## Glyfetti przez MCP
 
 Z Pythonem 3.11+ i opcjonalnym dodatkiem:
@@ -129,7 +156,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Skopiuj wygenerowany wpis serwera do ustawień klienta MCP. Klient uruchamia
-`glyfetti mcp` przez stdio. Osiem narzędzi udostępnia presety, fonty, rozwijanie
+`glyfetti mcp` przez stdio. Dziewięć narzędzi udostępnia presety, fonty, rozwijanie
 stylów, rzeczywiste podglądy PNG i eksport w pełnej jakości. Pliki mają ścieżki
 lokalne i URI zasobów MCP; poprzednie eksporty nie są nadpisywane. Zwykłe CLI
 oraz edytor nadal obsługują Python 3.10 bez zależności MCP.

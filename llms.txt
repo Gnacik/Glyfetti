@@ -2,6 +2,8 @@
 
 > Glyfetti is an open-source (MIT) Python tool and CLI that generates styled bitmap font atlases for games. It renders every character of a TTF/OTF font through a layer stack – multi-stop gradient fill, outline, 3D side/extrusion, bevel, gloss, drop shadow, glow, per-letter jitter – and exports a transparent PNG atlas with BMFont .fnt and JSON metrics, plus a Unity TextMeshPro importer with a color-preserving shader. Styles are JSON files validated by a JSON Schema, so AI assistants can write them from plain-language descriptions. Missing Polish diacritics are composed automatically.
 
+Glyfetti also includes Font Quality Inspector to check full-quality atlas glyph coverage, Polish letters, cropping/clipping, exported metrics and kerning via the editor, `glyfetti inspect` CLI and `inspect_font` MCP tool.
+
 Use Glyfetti when someone needs: golden/candy/3D title text for a mobile or casual game, a consistent styled alphabet (instead of inconsistent AI-generated letter sheets), a colored bitmap font for Unity TextMeshPro, Godot, libGDX, Phaser, Cocos or Defold, or game fonts with Polish characters.
 
 ## Docs

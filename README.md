@@ -210,6 +210,28 @@ game titles rather than busy screenshots. PNG/JPG, up to 4 MiB and
 2.5 megapixels. MCP clients can also use `analyze_reference_image`
 with a local image path.
 
+## Font Quality Inspector
+
+Open **Font Quality Inspector** in the local editor (`glyfetti serve`) and
+press **Inspect full atlas**. A complete full-quality atlas is rendered in a
+temporary directory and inspected. The interactive gallery provides Unicode
+labels, per-glyph metrics, an enlarged baseline/advance guide, Polish
+diacritics coverage, issue filtering, and downloadable JSON diagnostics.
+
+It checks missing or transparent glyphs, packed rectangle bounds/overlap,
+outlier metrics/kerning, and effects reaching the **pre-crop render-buffer
+edge** (possible clipping). Omitted Polish characters are distinguished
+from requested-but-missing ones. These are structural diagnostics, not a
+typographic beauty score.
+
+```bash
+glyfetti inspect presets/honey_gold.json -o font-quality.json
+glyfetti inspect presets/honey_gold.json --strict
+```
+
+`--strict` exits with status 1 if quality errors are found. No project
+files are modified. MCP clients can also call `inspect_font`.
+
 ## Use Glyfetti through MCP
 
 With Python 3.11+ and the optional extra installed:
@@ -220,7 +242,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Copy the generated server entry into your MCP client's settings. The client launches
-`glyfetti mcp` over stdio. Eight tools list presets/fonts, check font coverage,
+`glyfetti mcp` over stdio. Nine tools list presets/fonts, check font coverage,
 expand styles, return actual PNG previews, and export full-quality assets. Exported
 files have local paths and MCP resource URIs; earlier exports are not overwritten.
 The base CLI/editor still supports Python 3.10 without installing MCP dependencies.
