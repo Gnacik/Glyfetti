@@ -1,6 +1,6 @@
 // Glyfetti importer: atlas PNG + JSON (from `glyfetti build`) -> TMP_FontAsset with a color atlas.
 // Usage: select the .json file in the Project window, then  Tools > Glyfetti > Create TMP Font Asset.
-// The PNG must sit next to the JSON and share its name.
+// The PNG must sit next to the JSON and share its name (multi-page atlases: every file listed in `pages`).
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
@@ -14,9 +14,9 @@ namespace Glyfetti.Editor
 {
     public static class BitmapFontToTMP
     {
-        [System.Serializable] class CharDef { public int id, x, y, w, h, xo, yo, xa; }
+        [System.Serializable] class CharDef { public int id, x, y, w, h, xo, yo, xa, page; }
         [System.Serializable] class KerningDef { public int first, second, amount; }
-        [System.Serializable] class FontDef { public string name; public int size, lineHeight, baseline, scaleW, scaleH; public CharDef[] chars; public KerningDef[] kernings; }
+        [System.Serializable] class FontDef { public string name; public int size, lineHeight, baseline, scaleW, scaleH; public CharDef[] chars; public KerningDef[] kernings; public string[] pages; }
 
         [MenuItem("Tools/Glyfetti/Create TMP Font Asset")]
         static void CreateFromSelection()
@@ -36,10 +36,15 @@ namespace Glyfetti.Editor
                 throw new System.ArgumentException("Invalid Glyfetti font metadata.");
             var shader = Shader.Find("Glyfetti/ColorBitmapFont");
             if (shader == null) throw new System.InvalidOperationException("Glyfetti color shader is missing. Reinstall the package.");
+            string dir = Path.GetDirectoryName(jsonPath).Replace('\\', '/');
+            var pages = def.pages != null && def.pages.Length > 0 ? def.pages : new[] { $"{Path.GetFileNameWithoutExtension(jsonPath)}.png" };
+            foreach (var page in pages)
+                if (string.IsNullOrEmpty(page) || page != Path.GetFileName(page))
+                    throw new System.ArgumentException("Invalid atlas page in Glyfetti metadata.");
             var ids = new HashSet<int>();
             foreach (var c in def.chars)
                 if (c.id < 0 || c.id > 0x10FFFF || !ids.Add(c.id) || c.x < 0 || c.y < 0 ||
-                    c.w < 0 || c.h < 0 || c.x + c.w > def.scaleW || c.y + c.h > def.scaleH)
+                    c.w < 0 || c.h < 0 || c.page < 0 || c.page >= pages.Length || c.x + c.w > def.scaleW || c.y + c.h > def.scaleH)
                     throw new System.ArgumentException("Invalid or duplicate character in Glyfetti metadata.");
             if (def.kernings != null)
             {
@@ -49,25 +54,27 @@ namespace Glyfetti.Editor
                         !pairs.Add(((ulong)(uint)pair.first << 32) | (uint)pair.second))
                         throw new System.ArgumentException("Invalid or duplicate kerning pair in Glyfetti metadata.");
             }
-            string dir = Path.GetDirectoryName(jsonPath).Replace('\\', '/');
-            string texPath = $"{dir}/{Path.GetFileNameWithoutExtension(jsonPath)}.png";
-
             // atlas import settings: uncompressed, alpha-is-transparency (prevents dark fringes when filtering)
-            var imp = (TextureImporter)AssetImporter.GetAtPath(texPath);
-            if (imp == null) { Debug.LogError($"[Glyfetti] Atlas not found: {texPath}"); return null; }
-            imp.textureType = TextureImporterType.Default;
-            imp.alphaIsTransparency = true;
-            imp.mipmapEnabled = true;          // nicer when scaled down
-            imp.npotScale = TextureImporterNPOTScale.None;
-            imp.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(def.scaleW, def.scaleH));
-            imp.isReadable = false;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
-            imp.wrapMode = TextureWrapMode.Clamp;
-            imp.filterMode = FilterMode.Bilinear;
-            imp.SaveAndReimport();
-            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
-            if (tex.width != def.scaleW || tex.height != def.scaleH)
-                throw new System.ArgumentException("Atlas dimensions do not match JSON metadata. Check texture import size limits.");
+            var textures = new Texture2D[pages.Length];
+            for (int i = 0; i < pages.Length; i++)
+            {
+                string texPath = $"{dir}/{pages[i]}";
+                var imp = (TextureImporter)AssetImporter.GetAtPath(texPath);
+                if (imp == null) { Debug.LogError($"[Glyfetti] Atlas not found: {texPath}"); return null; }
+                imp.textureType = TextureImporterType.Default;
+                imp.alphaIsTransparency = true;
+                imp.mipmapEnabled = true;          // nicer when scaled down
+                imp.npotScale = TextureImporterNPOTScale.None;
+                imp.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(def.scaleW, def.scaleH));
+                imp.isReadable = false;
+                imp.textureCompression = TextureImporterCompression.Uncompressed;
+                imp.wrapMode = TextureWrapMode.Clamp;
+                imp.filterMode = FilterMode.Bilinear;
+                imp.SaveAndReimport();
+                textures[i] = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+                if (textures[i].width != def.scaleW || textures[i].height != def.scaleH)
+                    throw new System.ArgumentException("Atlas dimensions do not match JSON metadata. Check texture import size limits.");
+            }
 
             string assetPath = $"{dir}/{def.name} TMP.asset";
             var fa = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(assetPath);
@@ -105,7 +112,7 @@ namespace Glyfetti.Editor
                 // TextCore measures rect Y from the atlas BOTTOM, the JSON from the top
                 var rect = new GlyphRect(c.x, def.scaleH - c.y - c.h, c.w, c.h);
                 var metrics = new GlyphMetrics(c.w, c.h, c.xo, def.baseline - c.yo, c.xa);
-                var glyph = new Glyph(idx, metrics, rect, 1f, 0);
+                var glyph = new Glyph(idx, metrics, rect, 1f, c.page);
                 fa.glyphTable.Add(glyph);
                 fa.characterTable.Add(new TMP_Character((uint)c.id, glyph));
                 glyphIndices.Add(c.id, idx);
@@ -129,9 +136,10 @@ namespace Glyfetti.Editor
             if (addMaterial) mat = new Material(shader) { name = def.name + " Material" };
             else Undo.RecordObject(mat, "Update Glyfetti material");
             mat.shader = shader;
-            mat.SetTexture("_MainTex", tex);
+            mat.SetTexture("_MainTex", textures[0]);
             fa.material = mat;
-            fa.atlasTextures = new[] { tex };
+            fa.atlasTextures = textures;
+            fa.isMultiAtlasTexturesEnabled = textures.Length > 1;
 
             if (isNew) AssetDatabase.CreateAsset(fa, assetPath);
             if (addMaterial) AssetDatabase.AddObjectToAsset(mat, fa);

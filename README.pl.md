@@ -219,7 +219,10 @@ lokalnie. Serwer zatrzymasz przez Ctrl+C.
 
 `glyfetti validate moj_styl.json` sprawdza styl bez renderowania. Za mały atlas
 zgłasza błąd zamiast obcinać litery. Parametr `max_atlas_size` ogranicza szerokość
-i wysokość tekstury (domyślnie 8192 px).
+i wysokość tekstury (domyślnie 8192 px). Litery, które się nie mieszczą, trafiają na
+kolejne strony atlasu (`<name>_0.png`, `<name>_1.png`, …) wymienione w `.fnt` i JSON;
+atlas jednostronicowy zachowuje nazwę `<name>.png`. `max_pages` (domyślnie 16, CLI
+`--max-pages`) ogranicza liczbę stron; `1` przywraca błąd zamiast dzielenia na strony.
 
 ### Kerning i pakowanie atlasu
 

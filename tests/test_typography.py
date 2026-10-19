@@ -10,7 +10,7 @@ import pytest
 
 from glyfetti.engine import build, FONTS_DIR
 from glyfetti.kerning import read_kerning
-from glyfetti.packing import pack_atlas, shelf_pack
+from glyfetti.packing import pack_atlas, pack_pages, shelf_pack
 
 
 def custom_font(tmp_path, feature=None):
@@ -175,3 +175,26 @@ def test_maxrects_rejects_oversized_glyphs():
         pack_atlas([(200, 10)], 128)
     with pytest.raises(ValueError, match='glyph height'):
         pack_atlas([(10, 200)], 128, max_height=128)
+
+
+@pytest.mark.parametrize('method', ['maxrects', 'shelf'])
+@pytest.mark.parametrize('seed', range(4))
+def test_pages_spill_in_bounds_without_overlap(seed, method):
+    randomizer = random.Random(seed)
+    sizes = [(randomizer.randint(4, 60), randomizer.randint(4, 60)) for _ in range(60)]
+    positions, height, _, pages = pack_pages(sizes, 128, 2, 128, method, 64)
+    assert pages >= 2 and height <= 128
+    assert {page for page, _, _ in positions} == set(range(pages))
+    for index, ((page, x, y), (w, h)) in enumerate(zip(positions, sizes)):
+        assert 2 <= x and x + w <= 128 and 2 <= y and y + h <= height - 2
+        for (other_page, other_x, other_y), (other_w, other_h) in zip(positions[index + 1:], sizes[index + 1:]):
+            assert other_page != page or x + w + 2 <= other_x or other_x + other_w + 2 <= x or y + h + 2 <= other_y or other_y + other_h + 2 <= y
+
+
+def test_pages_keep_single_page_packing_and_honor_max_pages():
+    sizes = [(70, 20), (20, 70)] * 3
+    assert pack_pages(sizes, 128, max_height=128) == ([(0, x, y) for x, y in pack_atlas(sizes, 128, max_height=128)[0]], 128, 'maxrects', 1)
+    with pytest.raises(ValueError, match='max_pages'):
+        pack_pages([(60, 60)] * 20, 128, max_height=128, max_pages=2)
+    with pytest.raises(ValueError, match='glyph height'):
+        pack_pages([(10, 200)], 128, max_height=128)

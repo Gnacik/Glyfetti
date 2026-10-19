@@ -153,3 +153,21 @@ def test_editor_inspect_and_preview_resolve_relative_fonts_alike(tmp_path, monke
         finally:
             server.shutdown()
             worker.join(timeout=5)
+
+
+def test_multi_page_atlas_is_inspected_per_page():
+    style = dict(small_style(chars="ABCDEFGHIJKLąę"), atlas_width=64, max_atlas_size=64, max_pages=64)
+    report = inspect_style(style, include_atlas=True)
+    assert report["pages"] >= 2 and len(report["atlas_pngs"]) == report["pages"]
+    assert report["summary"]["errors"] == 0
+    assert {glyph["page"] for glyph in report["glyphs"]} == set(range(report["pages"]))
+
+
+def test_glyph_on_missing_page_is_an_error():
+    pages = [Image.new("RGBA", (16, 16), (255, 255, 255, 255)) for _ in range(2)]
+    metadata = {"name": "paged", "size": 12, "scaleW": 16, "scaleH": 16, "baseline": 10, "lineHeight": 14, "pages": ["a.png", "b.png"],
+                "chars": [{"id": 65, "page": 1, "x": 0, "y": 0, "w": 8, "h": 8, "xo": 0, "yo": 0, "xa": 8},
+                          {"id": 66, "page": 0, "x": 0, "y": 0, "w": 8, "h": 8, "xo": 0, "yo": 0, "xa": 8},
+                          {"id": 67, "page": 2, "x": 0, "y": 0, "w": 8, "h": 8, "xo": 0, "yo": 0, "xa": 8}]}
+    report = inspect_atlas(pages, metadata, requested="AB")
+    assert [issue["code"] for issue in report["issues"]] == ["page"]

@@ -569,7 +569,14 @@
           "minimum": 8,
           "maximum": 8192,
           "default": 8192,
-          "description": "Maximum atlas width and height; oversized builds fail without cropping."
+          "description": "Maximum atlas page width and height; glyphs that do not fit spill into extra pages, never cropped."
+        },
+        "max_pages": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 16,
+          "description": "Maximum atlas pages; 1 fails instead of spilling into extra pages."
         },
         "kerning": {
           "type": "boolean",

@@ -3,6 +3,7 @@ import struct
 import xml.etree.ElementTree as ET
 
 import pytest
+from PIL import Image
 
 from glyfetti.cli import main
 from glyfetti.engine import build, FONTS_DIR
@@ -90,3 +91,61 @@ def test_invalid_fnt_format_is_rejected(style, tmp_path):
     source.write_text(json.dumps(dict(style, fnt_format='json')), 'utf-8')
     with pytest.raises(ValueError, match='fnt_format'):
         build(source, tmp_path / 'out')
+
+
+MULTI = dict(chars='ABCDEFGHIJKLMNOPąę', atlas_width=64, max_atlas_size=64, max_pages=64)
+
+
+@pytest.mark.parametrize('method', ['maxrects', 'shelf'])
+def test_multi_page_atlas_in_every_format(style, tmp_path, method):
+    style = dict(style, **MULTI, atlas_packing=method)
+    parsed, results = {}, {}
+    for fmt, parse in (('text', parse_text), ('xml', parse_xml), ('binary', parse_binary)):
+        source = tmp_path / f'{fmt}.json'
+        source.write_text(json.dumps(dict(style, fnt_format=fmt)), 'utf-8')
+        results[fmt] = build(source, tmp_path / fmt)
+        parsed[fmt] = parse((tmp_path / fmt / 'test.fnt').read_bytes())
+    assert parsed['xml'] == parsed['text']
+    assert parsed['binary'] == parsed['text']
+    font = parsed['text']
+    metadata = json.loads((tmp_path / 'text/test.json').read_text())
+    pages = metadata['pages']
+    assert len(pages) >= 2 and results['text']['pages'] == len(pages)
+    assert font['pages'] == pages == [f'test_{i}.png' for i in range(len(pages))]
+    assert font['common']['pages'] == len(pages)
+    assert not (tmp_path / 'text/test.png').exists()
+    assert all((tmp_path / 'text' / f'test_{i}_atlas_on_white.png').exists() for i in range(len(pages)))
+    width, height = font['common']['scaleW'], font['common']['scaleH']
+    assert height <= 64
+    images = [Image.open(tmp_path / 'text' / file) for file in pages]
+    assert all(image.size == (width, height) for image in images)
+    assert [(c['id'], c.get('page', 0), c['x'], c['y']) for c in metadata['chars']] == [(c['id'], c['page'], c['x'], c['y']) for c in font['chars']]
+    glyphs = [c for c in font['chars'] if c['width']]
+    assert {c['page'] for c in glyphs} == set(range(len(pages)))
+    for i, c in enumerate(glyphs):
+        assert 0 <= c['page'] < len(pages)
+        assert 0 <= c['x'] and c['x'] + c['width'] <= width and 0 <= c['y'] and c['y'] + c['height'] <= height
+        assert images[c['page']].getchannel('A').crop((c['x'], c['y'], c['x'] + c['width'], c['y'] + c['height'])).getbbox()
+        for o in glyphs[i + 1:]:
+            assert o['page'] != c['page'] or c['x'] + c['width'] <= o['x'] or o['x'] + o['width'] <= c['x'] or \
+                c['y'] + c['height'] <= o['y'] or o['y'] + o['height'] <= c['y']
+
+
+def test_single_page_output_keeps_plain_names(style, tmp_path):
+    source = tmp_path / 'style.json'
+    source.write_text(json.dumps(style), 'utf-8')
+    assert build(source, tmp_path / 'out')['pages'] == 1
+    metadata = json.loads((tmp_path / 'out/test.json').read_text())
+    assert 'pages' not in metadata and all('page' not in c for c in metadata['chars'])
+    assert parse_text((tmp_path / 'out/test.fnt').read_bytes())['pages'] == ['test.png']
+
+
+def test_max_pages_limits_spilling(style, tmp_path):
+    source = tmp_path / 'style.json'
+    source.write_text(json.dumps(dict(style, **dict(MULTI, max_pages=1))), 'utf-8')
+    with pytest.raises(ValueError, match='max_atlas_size'):
+        build(source, tmp_path / 'one')
+    with pytest.raises(ValueError, match='max_pages'):
+        build(source, tmp_path / 'two', max_pages=2)
+    assert main(['build', str(source), '-o', str(tmp_path / 'cli'), '--max-pages', '64']) == 0
+    assert (tmp_path / 'cli/test_0.png').exists()

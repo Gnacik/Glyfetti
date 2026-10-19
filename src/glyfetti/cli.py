@@ -14,6 +14,7 @@ def main(argv=None):
     b.add_argument('--preview-only', action='store_true', help='render only the preview text (fast)')
     b.add_argument('-j', '--workers', type=int, help='glyph rendering threads (default: CPU count, 1 = sequential)')
     b.add_argument('--fnt-format', choices=['text', 'xml', 'binary'], help='BMFont .fnt format (default: style fnt_format or text)')
+    b.add_argument('--max-pages', type=int, help='maximum atlas pages before failing (default: style max_pages or 16)')
 
     title = sub.add_parser('title', help='render whole text with shared effects into a transparent PNG')
     title.add_argument('style', help='style JSON; uses its preview text unless --text is given')
@@ -141,9 +142,10 @@ def run(a):
     elif a.cmd == 'build':
         from .engine import build
         for s in a.style:
-            r = build(s, out_dir=a.out, preview_only=a.preview_only, workers=a.workers, fnt_format=a.fnt_format)
+            r = build(s, out_dir=a.out, preview_only=a.preview_only, workers=a.workers, fnt_format=a.fnt_format, max_pages=a.max_pages)
+            pages = f" x{r['pages']} pages" if r['pages'] > 1 else ''
             msg = (f"{r['name']}: {r['glyphs']} glyphs, {r['kernings']} kerning pairs, "
-                   f"atlas {r['atlas'][0]}x{r['atlas'][1]} ({r['packing']}, {r['occupancy']:.0%} occupied) -> {r['out']}")
+                   f"atlas {r['atlas'][0]}x{r['atlas'][1]}{pages} ({r['packing']}, {r['occupancy']:.0%} occupied) -> {r['out']}")
             if r['skipped']:
                 msg += f"  (not in font, skipped: {r['skipped']})"
             print(msg)

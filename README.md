@@ -107,8 +107,11 @@ into the export. All rendering runs locally. Stop the server with Ctrl+C.
 
 Styles are validated before rendering; `glyfetti validate my_style.json` checks a file
 without generating images. `atlas_width` must fit every glyph including effects.
-`max_atlas_size` defaults to 8192 pixels in either dimension; an oversized export
-fails with a clear message instead of silently cropping glyphs.
+`max_atlas_size` defaults to 8192 pixels in either dimension. Glyphs that do not fit
+spill into extra atlas pages (`<name>_0.png`, `<name>_1.png`, …) listed in the `.fnt`
+and JSON; a single-page atlas keeps the plain `<name>.png` name. `max_pages` (default 16,
+CLI `--max-pages`) caps the page count; `1` restores the old fail-instead-of-spill behavior.
+Glyphs are never silently cropped.
 
 ![Local style editor with live font preview](docs/images/editor.png)
 
@@ -339,7 +342,7 @@ glyfetti expand STYLE.json [-o expanded.json]
 
 glyfetti validate STYLE.json [STYLE2.json …]
 
-glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N] [--fnt-format text|xml|binary]
+glyfetti build STYLE.json [STYLE2.json …] [-o OUT] [--preview-only] [-j N] [--fnt-format text|xml|binary] [--max-pages N]
 glyfetti inspect STYLE.json [-o report.json] [--strict]
 glyfetti reference IMAGE.png [--style STYLE.json] [-o OUT.style.json]
 glyfetti gallery [FOLDER] [-o gallery.png]

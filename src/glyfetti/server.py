@@ -71,16 +71,16 @@ def render_style(style, preview=False, mode='atlas', with_report=False):
         if preview:
             image = (root / 'out' / f"{result['name']}_preview.png").read_bytes()
             return {'image': 'data:image/png;base64,' + base64.b64encode(image).decode(),
-                    'glyphs': result['glyphs'], 'atlas': result['atlas'], 'skipped': result['skipped'],
+                    'glyphs': result['glyphs'], 'atlas': result['atlas'], 'pages': result['pages'], 'skipped': result['skipped'],
                     'kernings': result['kernings'], 'packing': result['packing'], 'occupancy': result['occupancy']}
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as target:
             for path in sorted((root / 'out').iterdir()):
                 target.write(path, path.name)
             target.writestr(f"{style['name']}.style.json", json.dumps(original, ensure_ascii=False, indent=2) + '\n')
-            target.writestr('build-report.json', json.dumps({key: result[key] for key in ('glyphs', 'atlas', 'skipped', 'kernings', 'packing', 'occupancy')}, ensure_ascii=False, indent=2) + '\n')
+            target.writestr('build-report.json', json.dumps({key: result[key] for key in ('glyphs', 'atlas', 'pages', 'skipped', 'kernings', 'packing', 'occupancy')}, ensure_ascii=False, indent=2) + '\n')
         data = archive.getvalue()
-        report = {key: result[key] for key in ('glyphs', 'atlas', 'skipped', 'kernings', 'packing', 'occupancy')}
+        report = {key: result[key] for key in ('glyphs', 'atlas', 'pages', 'skipped', 'kernings', 'packing', 'occupancy')}
         return (data, report) if with_report else data
 
 
