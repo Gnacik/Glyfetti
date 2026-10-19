@@ -62,6 +62,7 @@ def analyze_reference(image_bytes, base_style):
             if width < 16 or height < 16 or width * height > MAX_REFERENCE_PIXELS:
                 raise ValueError('Reference dimensions must be at least 16×16 and at most 2.5 megapixels.')
             pixels = np.asarray(ImageOps.exif_transpose(source).convert('RGBA'))
+            height, width = pixels.shape[:2]
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as error:
         raise ValueError('Could not read reference PNG/JPEG image.') from error
 

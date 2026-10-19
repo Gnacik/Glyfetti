@@ -61,6 +61,17 @@ def test_invalid_or_oversized_image_is_rejected(image):
         analyze_reference(image, _style())
 
 
+def test_exif_rotated_jpeg_uses_transposed_dimensions():
+    image = Image.new('RGB', (200, 80), 'white')
+    ImageDraw.Draw(image).rectangle((20, 15, 180, 65), fill='#D09020', outline='#301000', width=5)
+    exif = Image.Exif()
+    exif[0x0112] = 6
+    stream = BytesIO()
+    image.save(stream, 'JPEG', exif=exif.tobytes())
+    result = analyze_reference(stream.getvalue(), _style())
+    assert result['analysis']['image_size'] == [80, 200]
+
+
 def test_solid_background_without_foreground_is_rejected():
     stream = BytesIO()
     Image.new('RGB', (200, 100), '#F0F0F0').save(stream, format='PNG')
