@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0a1
 
 - Add Font Quality Inspector: full-render diagnostics for glyph coverage, bounds, overlap, clipping, advances, kerning and Polish characters.
 - Add an interactive editor grid with enlarged baseline/advance guides, issue filters and JSON report download.
