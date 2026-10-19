@@ -1,5 +1,6 @@
 """Loopback-only editor. Assets are rendered locally; no external services."""
 import base64
+import binascii
 import copy
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
@@ -18,6 +19,7 @@ from .validation import DATA_DIR, validate_style
 
 WEB_DIR = Path(__file__).parent / 'web'
 MAX_BODY = 256 * 1024
+MAX_REFERENCE_BODY = 6 * 1024 * 1024
 
 
 class LocalHTTPServer(HTTPServer):
@@ -119,13 +121,29 @@ def make_server(port=8765):
         def do_POST(self):
             if not self.allowed() or not secrets.compare_digest(self.headers.get('X-Glyfetti-Token', ''), token):
                 return self.respond(403, {'error': 'Invalid editor session. Reload the page.'})
-            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate', '/api/expand'):
+            if self.path not in ('/api/preview', '/api/export', '/api/title-preview', '/api/title-export', '/api/validate', '/api/expand', '/api/reference'):
                 return self.respond(404, {'error': 'Not found'})
             try:
                 length = int(self.headers.get('Content-Length', '0'))
-                if not 0 < length <= MAX_BODY:
-                    return self.respond(413, {'error': 'Style JSON must be between 1 byte and 256 KiB.'})
+                limit = MAX_REFERENCE_BODY if self.path == '/api/reference' else MAX_BODY
+                if not 0 < length <= limit:
+                    return self.respond(413, {'error': 'Request is too large.'})
                 style = json.loads(self.rfile.read(length))
+                if self.path == '/api/reference':
+                    from .reference import MAX_REFERENCE_BYTES, analyze_reference
+                    if not isinstance(style, dict):
+                        raise ValueError('Expected reference image and base style JSON.')
+                    encoded = style.get('image', '')
+                    if not isinstance(encoded, str) or not encoded.startswith(('data:image/png;base64,', 'data:image/jpeg;base64,')):
+                        raise ValueError('Reference must be a PNG/JPEG data URL.')
+                    payload = encoded.partition(',')[2]
+                    if len(payload) > (MAX_REFERENCE_BYTES + 2) // 3 * 4:
+                        raise ValueError('Reference image exceeds 4 MiB.')
+                    try:
+                        image = base64.b64decode(payload, validate=True)
+                    except binascii.Error as error:
+                        raise ValueError('Invalid reference image encoding.') from error
+                    return self.respond(200, analyze_reference(image, style.get('style')))
                 if self.path == '/api/expand':
                     return self.respond(200, {'style': validate_style(style)})
                 if self.path == '/api/validate':
