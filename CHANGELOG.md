@@ -23,6 +23,7 @@
 - CI: ruff and mypy lint job, pytest coverage report, pip cache, Python 3.13 and 3.14 in the test matrix; `dev` extra.
 - Speed up the effect stack ~2x per glyph: compositing limited to the layer bounding box, integer/bilinear shifts by slicing instead of `ndi.shift`, large shadow/extrude blurs at reduced resolution, one distance transform for bevel and gloss (max 2/255 premultiplied difference).
 - Export BMFont `.fnt` as text, XML or binary (version 3) via `fnt_format` / `glyfetti build --fnt-format`; kerning included in every format.
+- Add named character sets (`charset`: `ascii`, `latin1`, `latin-ext-a`, `cyrillic`, `polish`, or `font` for the whole font cmap, capped at 4096), combinable with `chars`.
 
 ## 0.1.5a1
 

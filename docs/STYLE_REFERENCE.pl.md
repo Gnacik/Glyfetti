@@ -123,7 +123,8 @@ rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fo
 | `variation` | lista liczb lub obiekt | – | osie fontu zmiennego, np. `{"wght": 800, "wdth": 75}` |
 | `size` | px | **wymagany** | rozmiar fontu w atlasie; nie powiększaj tekstu w grze powyżej tej wartości |
 | `supersample` | 1–4 | 3 | renderowanie w N× większej skali i zmniejszenie (gładkie krawędzie, ale wolniej) |
-| `chars` | string | **wymagany** | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
+| `chars` | string | **wymagany**, chyba że jest `charset` | zestaw znaków do atlasu (duplikaty i spacje są pomijane, spacja jest dodawana zawsze) |
+| `charset` | nazwa lub lista | – | nazwane zestawy dopisywane do `chars`: `ascii`, `latin1`, `latin-ext-a`, `cyrillic`, `polish`, `font` (cała cmap fontu, maks. 4096 znaków) |
 | `atlas_width` | px | 1024 | szerokość atlasu; wysokość dobierana jako potęga 2 |
 | `max_atlas_size` | px | 8192 | maksymalna szerokość i wysokość atlasu; przekroczenie limitu zgłasza błąd |
 | `atlas_packing` | `maxrects` / `shelf` | `maxrects` | kompaktowe pakowanie bez obrotu z wariantem awaryjnym w rzędach |

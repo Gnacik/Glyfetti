@@ -247,6 +247,7 @@ def prepare_style(style, base, text=None):
 
 
 FONTS_DIR = DATA_DIR / 'fonts'
+MAX_FONT_CHARS = 4096
 
 
 def effect_padding(st, font, chars, scale):
@@ -344,6 +345,11 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
     from fontTools.ttLib import TTFont as _TT
     with _TT(str(font_path)) as source:
         _cm = source.getBestCmap() or {}
+    names = st.get('charset', [])
+    if 'font' in ([names] if isinstance(names, str) else names) and not preview_only:
+        chars = list(dict.fromkeys(chars + [chr(c) for c in sorted(_cm) if chr(c).isprintable() and not chr(c).isspace()]))
+        if len(chars) > MAX_FONT_CHARS:
+            raise ValueError(f'charset: font has {len(chars)} characters, more than {MAX_FONT_CHARS}; use named charsets or chars')
     skipped = ''.join(c for c in chars if ord(c) not in _cm)
     chars = [c for c in chars if ord(c) in _cm]
     pad = effect_padding(st, font, chars, S)

@@ -18,9 +18,20 @@
         "name",
         "font",
         "size",
-        "chars",
         "fill",
         "outline"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "chars"
+          ]
+        },
+        {
+          "required": [
+            "charset"
+          ]
+        }
       ],
       "properties": {
         "$schema": {
@@ -88,6 +99,36 @@
           "description": "Characters to include.",
           "minLength": 1,
           "maxLength": 10000
+        },
+        "charset": {
+          "description": "Named character sets added to chars; \"font\" adds every character in the font cmap (max 4096).",
+          "anyOf": [
+            {
+              "enum": [
+                "ascii",
+                "latin1",
+                "latin-ext-a",
+                "cyrillic",
+                "polish",
+                "font"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "ascii",
+                  "latin1",
+                  "latin-ext-a",
+                  "cyrillic",
+                  "polish",
+                  "font"
+                ]
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
         },
         "atlas_width": {
           "type": "integer",
@@ -620,6 +661,9 @@
         },
         "chars": {
           "$ref": "#/$defs/raw/properties/chars"
+        },
+        "charset": {
+          "$ref": "#/$defs/raw/properties/charset"
         },
         "atlas_width": {
           "$ref": "#/$defs/raw/properties/atlas_width"

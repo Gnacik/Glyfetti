@@ -172,6 +172,9 @@ Patrz [instrukcja i narzędzia](docs/MCP.pl.md) oraz [szablon konfiguracji](exam
   <img src="docs/images/layers.png" alt="Warstwy Glyfetti: wypełnienie, obrys, bok 3D, bevel, połysk, cień" width="100%">
 </p>
 
+Zamiast (lub obok) dosłownego `chars` pole `"charset"` dodaje nazwane zestawy: `ascii`, `latin1`, `latin-ext-a`,
+`cyrillic`, `polish` albo `font` – wszystkie znaki z cmap fontu (do 4096), np. `"charset": ["latin1", "latin-ext-a"]`.
+
 Wszystkie parametry opisuje **[dokumentacja stylów](docs/STYLE_REFERENCE.pl.md)**.
 
 ## Presety

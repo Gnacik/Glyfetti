@@ -277,6 +277,9 @@ See [setup, tools and examples](docs/MCP.md) and the [client config template](ex
 }
 ```
 
+Instead of (or together with) a literal `chars` string, `"charset"` adds named sets: `ascii`, `latin1`, `latin-ext-a`,
+`cyrillic`, `polish`, or `font` for every character in the font cmap (up to 4096), e.g. `"charset": ["latin1", "latin-ext-a"]`.
+
 Every parameter is documented in the **[Style Reference](docs/STYLE_REFERENCE.md)**.
 
 ## Presets
