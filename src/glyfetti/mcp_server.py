@@ -44,7 +44,7 @@ def create_server(output_dir='glyfetti-output'):
         'Glyfetti', version=__version__, log_level='WARNING',
         instructions=(
             'Create styled bitmap font atlases or whole-title PNGs locally. Start with list_presets/get_preset '
-            'or a compact style such as {"name":"gold_title","simple":{"palette":"gold","shine":0.7}}. '
+            'or analyze_reference_image for colors from an isolated local title image, or a compact style such as {"name":"gold_title","simple":{"palette":"gold","shine":0.7}}. '
             'expand_style validates it and returns raw settings. Use preview_style to inspect the actual PNG, '
             'refine the style, then export_style to save full-quality artifacts. Use mode="title" for a '
             'shared outline around an entire title, or mode="atlas" for reusable glyphs and BMFont/Unity metrics. '
@@ -145,6 +145,19 @@ def create_server(output_dir='glyfetti-output'):
                   'mime_type': media, 'bytes': (folder / name).stat().st_size}
                  for name, media in ((filename, mime), ('style.json', 'application/json'))]
         return {'export_id': export_id, 'name': raw['name'], 'mode': mode, 'files': files, 'report': report}
+
+    @server.tool(annotations=read_only)
+    def analyze_reference_image(image: str, style: dict[str, Any]) -> dict[str, Any]:
+        """Estimate fill gradient and outline from a local PNG/JPEG; keep the font and effect geometry."""
+        from .reference import analyze_reference
+        source = Path(image).expanduser()
+        try:
+            if source.stat().st_size > 4 * 1024 * 1024:
+                raise ValueError('Reference image exceeds 4 MiB.')
+            result = analyze_reference(source.read_bytes(), prepare(style))
+            return result
+        except (ValueError, OSError, KeyError, TTLibError) as error:
+            raise ToolError(str(error)) from error
 
     @server.resource('glyfetti://styles/schema', mime_type='application/json')
     def style_schema() -> str:
