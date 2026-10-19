@@ -274,7 +274,7 @@ def shaped_glyph(ch, font, st, S, pad):
     return m, (bx, by), adv
 
 
-def build(style_path, out_dir=None, preview_only=False):
+def build(style_path, out_dir=None, preview_only=False, inspect=False):
     st = validate_style(json.loads(Path(style_path).read_text(encoding='utf-8')))
     maximum = st.get('max_atlas_size', 8192)
     if st.get('atlas_width', 1024) > maximum:
@@ -299,11 +299,19 @@ def build(style_path, out_dir=None, preview_only=False):
     pad = effect_padding(st, font, chars, S)
 
     glyphs = []
+    clipped_glyphs = []
     for ch in chars:
         m, (bx, by), adv = shaped_glyph(ch, font, st, S, pad)
         st['_line_top'] = by - asc
         st['_line_bottom'] = by
         rgba = style_glyph(m, st, S)
+        if inspect:
+            # Inspect BEFORE cropping the transparent padding: final glyph rectangles
+            # are intentionally tight and cannot reveal render-buffer clipping.
+            alpha = rgba[..., 3]
+            if (alpha[0].max() > 1 / 255 or alpha[-1].max() > 1 / 255
+                    or alpha[:, 0].max() > 1 / 255 or alpha[:, -1].max() > 1 / 255):
+                clipped_glyphs.append(ch)
         img = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
         img = img.resize((max(1, round(img.width / S)), max(1, round(img.height / S))), Image.LANCZOS)
         bb = img.getbbox() or (0, 0, 1, 1)
@@ -383,6 +391,7 @@ def build(style_path, out_dir=None, preview_only=False):
     sheet.alpha_composite(atlas)
     sheet.save(out / f'{name}_atlas_on_white.png')
     return {'glyphs': len(glyphs), 'atlas': (W, H), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,
-            'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H)}
+            'occupancy': sum(g['img'].width * g['img'].height for g in glyphs) / (W * H),
+            'clipped_glyphs': clipped_glyphs if inspect else []}
 
 
