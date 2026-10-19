@@ -30,7 +30,7 @@ def _foreground(rgb, alpha):
     """Prefer real transparency; otherwise remove a nearly uniform border."""
     height, width = alpha.shape
     border_alpha = np.concatenate((alpha[0], alpha[-1], alpha[:, 0], alpha[:, -1]))
-    if np.mean(border_alpha < 200) > .75:
+    if np.mean(border_alpha < 200) > .75 or np.mean(alpha < 128) > .05:
         return alpha >= 128, 'alpha', None
 
     border = np.concatenate((rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]))

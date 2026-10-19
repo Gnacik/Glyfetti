@@ -72,6 +72,17 @@ def test_exif_rotated_jpeg_uses_transposed_dimensions():
     assert result['analysis']['image_size'] == [80, 200]
 
 
+def test_tightly_cropped_transparent_png_uses_alpha():
+    image = Image.new('RGBA', (200, 60), (0, 0, 0, 0))
+    paint = ImageDraw.Draw(image)
+    for x in range(0, 200, 40):
+        paint.rectangle((x, 0, x + 29, 59), fill='#F0C040', outline='#402000', width=4)
+    stream = BytesIO()
+    image.save(stream, 'PNG')
+    result = analyze_reference(stream.getvalue(), _style())
+    assert result['analysis']['segmentation'] == 'alpha'
+
+
 def test_solid_background_without_foreground_is_rejected():
     stream = BytesIO()
     Image.new('RGB', (200, 100), '#F0F0F0').save(stream, format='PNG')
