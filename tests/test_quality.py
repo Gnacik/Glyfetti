@@ -52,6 +52,14 @@ def test_inspection_build_skips_preview_sheets(tmp_path):
     assert sorted(path.name for path in (tmp_path / "out").iterdir()) == ["quality_test.fnt", "quality_test.json", "quality_test.png"]
 
 
+def test_effects_exceeding_padding_are_reported_as_clipped(monkeypatch):
+    monkeypatch.setattr("glyfetti.engine.effect_padding", lambda *args: 1)
+    style = dict(small_style(), outline={"color": "#442211", "width": 6})
+    report = inspect_style(style)
+    assert report["summary"]["clipped"] == 3
+    assert {item["char"] for item in report["issues"] if item["code"] == "clipped"} == set("AąV")
+
+
 def test_missing_character_is_an_error_and_preserves_selected_coverage():
     style = small_style(chars="Aą😀")
     style["preview"] = ["Aą😀"]
