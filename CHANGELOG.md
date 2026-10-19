@@ -19,7 +19,7 @@
 
 - Speed up condensed styles (~35% faster `fire` build) by dropping redundant horizontal render padding; metrics unchanged.
 - Render glyphs on a thread pool (`build(workers=…)`, `glyfetti build -j N`; default CPU count, `1` = sequential); `fire` build ~5.8x faster, output byte-identical.
-- Add a tag-triggered release workflow: checks the tag against the package version, builds sdist + wheel, tests the wheel and publishes to PyPI via trusted publishing.
+- Add a tag-triggered release workflow: checks the tag against the package version, builds sdist + wheel, tests the wheel and attaches it to a GitHub release.
 - CI: ruff and mypy lint job, pytest coverage report, pip cache, Python 3.13 and 3.14 in the test matrix; `dev` extra.
 - Speed up the effect stack ~2x per glyph: compositing limited to the layer bounding box, integer/bilinear shifts by slicing instead of `ndi.shift`, large shadow/extrude blurs at reduced resolution, one distance transform for bevel and gloss (max 2/255 premultiplied difference).
 - Export BMFont `.fnt` as text, XML or binary (version 3) via `fnt_format` / `glyfetti build --fnt-format`; kerning included in every format.
