@@ -12,10 +12,12 @@ if sys.version_info < (3, 11):
 pytest.importorskip('mcp.server.mcpserver', reason='Install glyfetti[mcp] to test MCP')
 
 from mcp import Client, StdioServerParameters
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from glyfetti.mcp_server import create_server
 from glyfetti.cli import main
+from glyfetti.engine import FONTS_DIR
+from glyfetti.reference import MAX_REFERENCE_BYTES
 
 
 @pytest.fixture
@@ -70,6 +72,25 @@ async def test_mcp_font_quality_report(client):
     assert report['summary']['glyphs'] >= 4
     assert any(item['char'] == 'ą' and item['exported'] for item in report['polish'])
     assert 'atlas_png' not in report
+
+
+@pytest.mark.anyio
+async def test_reference_image_analysis_and_rejections(client, tmp_path):
+    image = Image.new('RGBA', (340, 120), (0, 0, 0, 0))
+    ImageDraw.Draw(image).text((20, 14), 'ABC', font=ImageFont.truetype(str(FONTS_DIR / 'TitanOne-Regular.ttf'), 64),
+                               fill='#F0C048', stroke_width=5, stroke_fill='#352018')
+    reference = tmp_path / 'reference.png'
+    image.save(reference)
+    result = await client.call_tool('analyze_reference_image', {'image': str(reference), 'style': style()})
+    assert not result.is_error
+    assert result.structured_content['analysis']['segmentation'] == 'alpha'
+    assert result.structured_content['style']['outline']['width'] > 0
+    oversized = tmp_path / 'oversized.png'
+    oversized.write_bytes(b'x' * (MAX_REFERENCE_BYTES + 1))
+    result = await client.call_tool('analyze_reference_image', {'image': str(oversized), 'style': style()})
+    assert result.is_error and '4 MiB' in result.content[0].text
+    result = await client.call_tool('analyze_reference_image', {'image': str(tmp_path / 'missing.png'), 'style': style()})
+    assert result.is_error
 
 
 @pytest.mark.anyio
