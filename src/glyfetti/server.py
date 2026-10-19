@@ -2,7 +2,7 @@
 import base64
 import binascii
 import copy
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import io
 import json
 import os
@@ -22,7 +22,7 @@ MAX_BODY = 256 * 1024
 MAX_REFERENCE_BODY = 6 * 1024 * 1024
 
 
-class LocalHTTPServer(HTTPServer):
+class LocalHTTPServer(ThreadingHTTPServer):
     # SO_REUSEADDR on Windows allows two live servers to bind the same port,
     # leaving the older renderer answering requests after a restart.
     allow_reuse_address = os.name != 'nt'

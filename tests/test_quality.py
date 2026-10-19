@@ -10,7 +10,7 @@ from PIL import Image
 import pytest
 
 from glyfetti.cli import main
-from glyfetti.engine import FONTS_DIR
+from glyfetti.engine import FONTS_DIR, build
 from glyfetti.quality import POLISH, inspect_atlas, inspect_style
 from glyfetti.server import make_server
 
@@ -43,6 +43,13 @@ def test_real_inspection_reads_rendered_atlas_and_metrics():
         assert glyph["codepoint"].startswith("U+")
     image = Image.open(io.BytesIO(base64.b64decode(report["atlas_png"].partition(",")[2])))
     assert list(image.size) == report["atlas"]
+
+
+def test_inspection_build_skips_preview_sheets(tmp_path):
+    source = tmp_path / "style.json"
+    source.write_text(json.dumps(small_style()), encoding="utf-8")
+    build(source, out_dir=tmp_path / "out", inspect=True)
+    assert sorted(path.name for path in (tmp_path / "out").iterdir()) == ["quality_test.fnt", "quality_test.json", "quality_test.png"]
 
 
 def test_missing_character_is_an_error_and_preserves_selected_coverage():
