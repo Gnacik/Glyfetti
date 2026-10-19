@@ -291,7 +291,7 @@ w grach komercyjnych.
 - [x] `glyfetti serve`: lokalne web UI z podglądem na żywo
 - [x] Kerning poziomy GPOS / kern, pakowanie atlasu MaxRects
 - [x] Tryb „title”: całe słowo ze wspólnym obrysem
-- [ ] Wyciąganie palety z obrazka referencyjnego
+- [x] Podstawowa ekstrakcja gradientu i obrysu z obrazka referencyjnego (PNG/JPG)
 
 ## Licencja
 
