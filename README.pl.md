@@ -96,6 +96,29 @@ Wszystkie opcje opisuje [dokumentacja](docs/STYLE_REFERENCE.pl.md#2-styl-prosty)
 
 ![Tworzenie stylu z koloru lub palety](docs/images/simple-editor.png)
 
+## Styl na podstawie obrazka referencyjnego
+
+W lokalnym edytorze (`glyfetti serve`) otwórz **Match colors from a reference image**,
+wybierz przycięty PNG lub JPG z napisem i kliknij **Extract palette and outline**.
+Analiza odbywa się lokalnie, bez wysyłania pliku do usług zewnętrznych.
+Otrzymasz edytowalny styl JSON oraz nowy podgląd.
+
+Można też użyć CLI:
+
+```bash
+glyfetti reference napis.png --style presets/honey_gold.json -o moj-styl.json
+glyfetti build moj-styl.json --preview-only
+```
+
+Importer rozpoznaje przybliżone kolory gradientu i obrysu. **Nie rozpoznaje fontu,
+nie przerysowuje liter ani nie odtwarza precyzyjnie efektów 3D/cienia** — te
+ustawienia pochodzą z wybranego presetu i nadal można je edytować.
+Najlepsze rezultaty dają wyizolowane litery na przezroczystym lub jednolitym tle.
+Maksymalnie 4 MiB, 2,5 megapiksela, PNG/JPG. Wielobarwne tło może zostać odrzucone.
+
+Asystenci podłączeni przez MCP mają też narzędzie `analyze_reference_image`
+dla lokalnej ścieżki pliku.
+
 ## Glyfetti przez MCP
 
 Z Pythonem 3.11+ i opcjonalnym dodatkiem:
@@ -106,7 +129,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Skopiuj wygenerowany wpis serwera do ustawień klienta MCP. Klient uruchamia
-`glyfetti mcp` przez stdio. Siedem narzędzi udostępnia presety, fonty, rozwijanie
+`glyfetti mcp` przez stdio. Osiem narzędzi udostępnia presety, fonty, rozwijanie
 stylów, rzeczywiste podglądy PNG i eksport w pełnej jakości. Pliki mają ścieżki
 lokalne i URI zasobów MCP; poprzednie eksporty nie są nadpisywane. Zwykłe CLI
 oraz edytor nadal obsługują Python 3.10 bez zależności MCP.
