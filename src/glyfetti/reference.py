@@ -89,7 +89,7 @@ def analyze_reference(image_bytes, base_style):
     y0, y1 = int(y.min()), int(y.max())
     distance = ndi.distance_transform_edt(mask)
     occupied = distance[mask]
-    cutoff = max(2.5, float(np.percentile(occupied, 70)) * .65)
+    cutoff = max(3.0, float(np.percentile(occupied, 82)) * 1.05)
     core = mask & (distance >= cutoff)
     if core.sum() < 24:
         core = mask & (distance >= 1.5)
@@ -97,7 +97,9 @@ def analyze_reference(image_bytes, base_style):
         raise ValueError('Letter strokes are too thin to estimate the fill palette.')
 
     core_color = np.median(rgb[core], axis=0)
-    ring = mask & (distance <= 2.2)
+    ring = mask & (distance >= 1.5) & (distance <= 3.5)
+    if not ring.any():
+        ring = mask & (distance <= 2.2)
     edge_color = np.median(rgb[ring], axis=0)
     contrast = float(np.linalg.norm(core_color - edge_color))
     has_outline = contrast >= 45
