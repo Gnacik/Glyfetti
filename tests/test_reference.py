@@ -55,7 +55,7 @@ def test_flat_jpeg_background_and_absent_outline():
     assert result['style']['outline']['width'] == 0
 
 
-@pytest.mark.parametrize('image', [b'', b'not-an-image', b'x' * (MAX_REFERENCE_BYTES + 1)])
+@pytest.mark.parametrize('image', [b'', b'not-an-image', b'x' * (MAX_REFERENCE_BYTES + 1)], ids=['empty', 'garbage', 'oversized'])
 def test_invalid_or_oversized_image_is_rejected(image):
     with pytest.raises(ValueError):
         analyze_reference(image, _style())
