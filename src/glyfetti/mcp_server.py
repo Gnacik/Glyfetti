@@ -46,7 +46,7 @@ def create_server(output_dir='glyfetti-output'):
             'Create styled bitmap font atlases or whole-title PNGs locally. Start with list_presets/get_preset '
             'or analyze_reference_image for colors from an isolated local title image, or a compact style such as {"name":"gold_title","simple":{"palette":"gold","shine":0.7}}. '
             'expand_style validates it and returns raw settings. Use preview_style to inspect the actual PNG, '
-            'refine the style, then export_style to save full-quality artifacts. Use mode="title" for a '
+            'refine the style, use inspect_font to check atlas quality, then export_style to save full-quality artifacts. Use mode="title" for a '
             'shared outline around an entire title, or mode="atlas" for reusable glyphs and BMFont/Unity metrics. '
             'Text overrides preview lines and its characters are included in atlas exports. '
             'Read glyfetti://styles/schema for all parameters. Custom fonts may use absolute local paths. '
@@ -145,6 +145,15 @@ def create_server(output_dir='glyfetti-output'):
                   'mime_type': media, 'bytes': (folder / name).stat().st_size}
                  for name, media in ((filename, mime), ('style.json', 'application/json'))]
         return {'export_id': export_id, 'name': raw['name'], 'mode': mode, 'files': files, 'report': report}
+
+    @server.tool(annotations=render_hint)
+    def inspect_font(style: dict[str, Any]) -> dict[str, Any]:
+        """Check actual rendered glyphs, atlas bounds, clipping, metrics, Polish coverage and kerning."""
+        from .quality import inspect_style
+        try:
+            return inspect_style(prepare(style), base=Path.cwd(), include_atlas=False)
+        except (ValueError, OSError, KeyError, TTLibError) as error:
+            raise ToolError(str(error)) from error
 
     @server.tool(annotations=read_only)
     def analyze_reference_image(image: str, style: dict[str, Any]) -> dict[str, Any]:
