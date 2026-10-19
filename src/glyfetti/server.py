@@ -147,7 +147,7 @@ def make_server(port=8765):
                     return self.respond(200, analyze_reference(image, style.get('style')))
                 if self.path == '/api/inspect':
                     from .quality import inspect_style
-                    return self.respond(200, inspect_style(style, base=Path.cwd(), include_atlas=True))
+                    return self.respond(200, inspect_style(style, base=FONTS_DIR, include_atlas=True))
                 if self.path == '/api/expand':
                     return self.respond(200, {'style': validate_style(style)})
                 if self.path == '/api/validate':

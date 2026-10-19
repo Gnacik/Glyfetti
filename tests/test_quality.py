@@ -127,3 +127,29 @@ def test_editor_inspect_endpoint_is_authenticated_and_returns_png():
         finally:
             server.shutdown()
             worker.join(timeout=5)
+
+
+def test_editor_inspect_and_preview_resolve_relative_fonts_alike(tmp_path, monkeypatch):
+    (tmp_path / "local.ttf").write_bytes((FONTS_DIR / "TitanOne-Regular.ttf").read_bytes())
+    monkeypatch.chdir(tmp_path)
+    with make_server(0) as server:
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        url = "http://127.0.0.1:" + str(server.server_port)
+        try:
+            with urlopen(url + "/api/catalog") as response:
+                token = json.load(response)["token"]
+            for font, expected in (("local.ttf", 400), ("TitanOne-Regular.ttf", 200)):
+                data = json.dumps(dict(small_style(), font=font)).encode()
+                for path in ("/api/preview", "/api/inspect"):
+                    req = Request(url + path, data=data,
+                                  headers={"X-Glyfetti-Token": token, "Content-Type": "application/json"})
+                    try:
+                        with urlopen(req) as response:
+                            status = response.status
+                    except HTTPError as error:
+                        status = error.code
+                    assert (font, path, status) == (font, path, expected)
+        finally:
+            server.shutdown()
+            worker.join(timeout=5)
