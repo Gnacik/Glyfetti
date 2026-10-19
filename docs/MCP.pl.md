@@ -57,6 +57,7 @@ protokół. Nie dodawaj banerów tekstowych przed komendą startową.
 | `preview_style` | Obraz PNG i metryki w jakości roboczej, bez tworzenia katalogu eksportu. |
 | `export_style` | Atlas ZIP lub przezroczysty napis PNG w pełnej jakości oraz JSON stylu. |
 | `analyze_reference_image` | Analiza lokalnego PNG/JPG: gradient, przybliżony obrys i edytowalny styl JSON (parametry `image`, `style`). |
+| `inspect_font` | Uruchamia pełny rendering do kontroli atlasu, braków Unicode, obcięć, metryk i kerningu; zwraca raport JSON. |
 
 Oba narzędzia renderujące przyjmują `mode: "atlas"` albo `mode: "title"` i opcjonalne
 pole `text`. Rzeczywiste znaki nowej linii tworzą kolejne wiersze. Tekst zastępuje
