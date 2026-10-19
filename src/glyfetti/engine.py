@@ -200,6 +200,18 @@ def resolve_font(st, base):
     return path, st
 
 
+def prepare_style(style, base, text=None):
+    """Validate a style, merge preview text into chars and pin an absolute font path."""
+    raw = validate_style(style)
+    if text is not None:
+        raw['preview'] = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    raw['chars'] = ''.join(dict.fromkeys(raw['chars'] + ''.join(raw.get('preview', []))))
+    raw = validate_style(raw)
+    font_path, _ = resolve_font(dict(raw, auto_diacritics=False), Path(base))
+    raw['font'] = str(font_path.resolve())
+    return raw
+
+
 FONTS_DIR = DATA_DIR / 'fonts'
 
 
