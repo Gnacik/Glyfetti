@@ -17,6 +17,8 @@
 - Take the reference size limit from `MAX_REFERENCE_BYTES` everywhere, including the editor.
 - Add tests for clipping detection and MCP `analyze_reference_image`.
 
+- Speed up condensed styles (~35% faster `fire` build) by dropping redundant horizontal render padding; metrics unchanged.
+
 ## 0.1.5a1
 
 - Add an optional stdio MCP server with preset/font discovery, native coverage
