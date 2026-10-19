@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add Font Quality Inspector: full-render diagnostics for glyph coverage, bounds, overlap, clipping, advances, kerning and Polish characters.
+- Add an interactive editor grid with enlarged baseline/advance guides, issue filters and JSON report download.
+- Add `glyfetti inspect` (`--strict`, `--out`) and MCP `inspect_font`; cover real atlases, corrupted metrics and editor API with tests.
+
 - Extract approximate fill gradients and outlines from isolated PNG/JPEG lettering references.
 - Add reference analysis to the local editor, CLI (`glyfetti reference`) and MCP (`analyze_reference_image`).
 - Keep font/effect geometry editable and preserve all image processing on the local machine.
