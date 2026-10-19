@@ -191,6 +191,25 @@ See the [simple style reference](docs/STYLE_REFERENCE.md#2-simple-style) for all
 
 ![Create a style from a color or palette](docs/images/simple-editor.png)
 
+## Extract a style from a reference image
+
+The local editor (`glyfetti serve`) now has **Match colors from a reference image**.
+Select a cropped PNG/JPG of lettering on a transparent or mostly uniform
+background, then choose **Extract palette and outline**. The editor estimates
+three gradient colors and an approximate outline color/width, producing a
+normal editable style JSON and refreshing the preview. Images stay local.
+
+```bash
+glyfetti reference example.png --style presets/honey_gold.json -o custom.style.json
+glyfetti build custom.style.json --preview-only
+```
+
+This is **not OCR or font matching**: the base style's font, extrusion,
+gloss and shadow geometry remain in place. It works best on isolated
+game titles rather than busy screenshots. PNG/JPG, up to 4 MiB and
+2.5 megapixels. MCP clients can also use `analyze_reference_image`
+with a local image path.
+
 ## Use Glyfetti through MCP
 
 With Python 3.11+ and the optional extra installed:
@@ -201,7 +220,7 @@ python -m glyfetti.cli mcp --output-dir ./glyfetti-output --print-config
 ```
 
 Copy the generated server entry into your MCP client's settings. The client launches
-`glyfetti mcp` over stdio. Seven tools list presets/fonts, check font coverage,
+`glyfetti mcp` over stdio. Eight tools list presets/fonts, check font coverage,
 expand styles, return actual PNG previews, and export full-quality assets. Exported
 files have local paths and MCP resource URIs; earlier exports are not overwritten.
 The base CLI/editor still supports Python 3.10 without installing MCP dependencies.
