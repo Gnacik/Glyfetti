@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
 from .validation import DATA_DIR, validate_style
-from .packing import pack_atlas, shelf_pack
+from .packing import pack_atlas, shelf_pack as shelf_pack
 from .kerning import read_kerning
 
 

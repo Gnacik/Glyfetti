@@ -399,7 +399,7 @@ games. Check the license of any other font you use.
 ## Contributing
 
 Issues and pull requests are welcome – especially new presets (one JSON file + a gallery tile),
-engine importers, and test reports from different Unity versions. Run `pytest` before submitting.
+engine importers, and test reports from different Unity versions. Install `pip install -e ".[dev]"` and run `ruff check .`, `mypy` and `pytest` before submitting.
 
 ## License
 

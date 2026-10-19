@@ -8,3 +8,4 @@ presets/out/
 .pytest_cache/
 glyfetti-output/
 *.patched.ttf
+.coverage

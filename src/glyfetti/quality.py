@@ -4,7 +4,6 @@ Warnings are diagnostics, not guesses about typographic aesthetics. Inspecting a
 style never writes into its source directory or modifies its JSON/font files.
 """
 import base64
-from io import BytesIO
 import json
 from pathlib import Path
 import tempfile
