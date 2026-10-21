@@ -1,11 +1,12 @@
 """Glyfetti rendering engine: styled bitmap font atlases (PNG + BMFont .fnt + JSON).
 
 Every glyph goes through the same layer stack (bottom-up):
-  shadow -> extrude -> outline -> side -> fill -> bevel -> gloss
+  shadow -> extrude -> outline -> side -> fill -> bevel -> gloss -> spray
 All parameters live in a style JSON file (see docs/STYLE_REFERENCE.md).
 """
 import hashlib
 import json, math
+import zlib
 import os
 import tempfile
 import warnings
@@ -174,7 +175,39 @@ def style_glyph(m, st, S):
         rgb = rgb + (hex2rgb(gl['color']) - rgb) * g[..., None]
 
     over(out, np.clip(rgb, 0, 1), inner)
+
+    # 7) spray – paint grain on the letter and overspray dots around it
+    sp = st.get('spray')
+    if sp and sp.get('enabled', True):
+        spray(out, sp, S, outline_mask)
     return out
+
+
+def spray(out, sp, S, outline_mask):
+    H, W = outline_mask.shape
+    rng = np.random.default_rng([sp.get('seed', 0), zlib.crc32(np.packbits(outline_mask > 0.5).tobytes())])
+    alpha = out[..., 3]
+    grain = sp.get('grain', 0.06)
+    if grain > 0:
+        fine = ndi.gaussian_filter(rng.standard_normal((H, W)).astype(np.float32), 0.6 * S)
+        coarse = ndi.gaussian_filter(rng.standard_normal((H, W)).astype(np.float32), 8 * S)
+        fine /= fine.std() + 1e-6
+        coarse /= coarse.std() + 1e-6
+        out[..., :3] = np.clip(out[..., :3] * (1 + grain * (0.55 * fine + 0.45 * coarse))[..., None], 0, 1)
+    density = sp.get('overspray', 0.4)
+    if density > 0:
+        halo = blur(alpha, sp.get('radius', 6) * S, S)
+        h, w = -(-H // S), -(-W // S)
+        hits = rng.random((h, w)) < density * np.clip(halo[::S, ::S] * (1 - alpha[::S, ::S]), 0, 1) ** 1.5
+        dots = np.kron(hits, np.ones((S, S), np.float32))[:H, :W]
+        color = sp.get('color') or out_color(out, alpha)
+        over(out, hex2rgb(color), dots * sp.get('opacity', 0.85) * (alpha < 0.5))
+
+
+def out_color(out, alpha):
+    edge = (alpha > 0.9) & (ndi.binary_erosion(alpha > 0.9, iterations=1) == 0)
+    rgb = out[..., :3][edge].mean(axis=0) if edge.any() else np.zeros(3)
+    return '#' + ''.join(f'{int(round(c * 255)):02x}' for c in rgb)
 
 
 def resolve_font(st, base):
@@ -263,6 +296,7 @@ def effect_padding(st, font, chars, scale):
         abs(shadow.get('dx', 0)), abs(shadow.get('dy', 0)), 0
     ) + 4 * shadow.get('blur', 0)
     extent += extrude.get('depth', 0) + 4 * extrude.get('blur', 0)
+    extent += 3 * layer('spray').get('radius', 6) if layer('spray') else 0
     jitter = st.get('jitter') or {}
     if jitter.get('rotate', 0):
         radius = max((max(abs(v) for v in font.getbbox(c, anchor='ls')) / scale for c in chars), default=0)

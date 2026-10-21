@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a `spray` layer: spray-paint grain on the letters and overspray dots around the edge.
+- Add `title.splatter`: seeded paint splatters behind and over a whole-title PNG.
+
 ## 0.2.0a1
 
 - Add Font Quality Inspector: full-render diagnostics for glyph coverage, bounds, overlap, clipping, advances, kerning and Polish characters.

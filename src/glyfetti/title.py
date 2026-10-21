@@ -9,6 +9,7 @@ from PIL import Image, ImageOps
 
 from .engine import effect_padding, load_font, shaped_glyph, style_glyph
 from .kerning import read_kerning
+from .splatter import splatter
 from .validation import validate_style
 
 MAX_RENDER_PIXELS = 4 * 1024 * 1024
@@ -109,9 +110,11 @@ def title_image(style, base):
     rgba = style_glyph(canvas, st, scale)
     image = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
     image = image.resize((max(1, math.ceil(image.width / scale)), max(1, math.ceil(image.height / scale))), Image.Resampling.LANCZOS)
-    bounds = image.getbbox()
-    if bounds is None:
+    if image.getbbox() is None:
         raise ValueError('title: no visible pixels to export')
+    if options.get('splatter'):
+        image = splatter(image, options['splatter'])
+    bounds = image.getbbox()
     image = ImageOps.expand(image.crop(bounds), border=padding, fill=(0, 0, 0, 0))
     return image, {'name': st['name'], 'size': image.size, 'glyphs': len(glyphs),
                    'kernings': len(kernings), 'skipped': missing, 'lines': len(lines)}

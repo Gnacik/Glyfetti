@@ -31,6 +31,7 @@ Each glyph is drawn bottom-up in this order:
 5. fill     – gradient fill of the letter's front
 6. bevel    – embossing: lightened and darkened edges
 7. gloss    – soft shine on the upper part of the letter
+8. spray    – spray-paint grain and overspray dots around the edge
 ```
 
 Every layer except `outline` and `fill` can be disabled with `"enabled": false` or omitted.
@@ -137,9 +138,10 @@ unchanged. Update absolute font paths when moving expanded styles to another com
 | `condense` | 0.5–1.5 | 1.0 | horizontal glyph scaling (condensed < 1) |
 | `embolden` | px | 0 | stroke thickening before effects are applied |
 | `jitter` | object or `null` | `null` | "bouncy" letters, see 3.9 |
+| `spray` | object | – | spray-paint texture, see 3.10 |
 | `preview` | list of strings | 3 test lines | texts for `*_preview.png` |
 | `preview_bg` | hex or `"transparent"` | `#ffffff` | preview background (preview only; the atlas is always transparent) |
-| `title` | object | `{ "align": "center", "padding": 8 }` | whole-title PNG options; align: left/center/right, padding: 0–200 final pixels |
+| `title` | object | `{ "align": "center", "padding": 8 }` | whole-title PNG options; align: left/center/right, padding: 0–200 final pixels; `splatter`, see 3.11 |
 | `auto_diacritics` | bool | `true` | compose missing Polish letters from accents present in the font |
 
 ### 3.2 `fill` – fill (letter front)
@@ -232,6 +234,29 @@ An older variant of the 3D effect: a dark mass under the entire outline. In new 
 
 The randomness is fixed per character: an "o" is always rotated the same way. In long text,
 repeated letters can give this away, so set `"jitter": null` for descriptions and numbers.
+
+### 3.10 `spray` – spray-paint texture
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `grain` | 0–1 | 0.06 | brightness noise on the painted letter |
+| `overspray` | 0–1 | 0.4 | density of loose paint dots around the edge |
+| `radius` | px | 6 | how far the overspray reaches |
+| `color` | hex | edge color | overspray dot color |
+| `opacity` | 0–1 | 0.85 | overspray dot opacity |
+| `seed` | number | 0 | random seed |
+
+### 3.11 `title.splatter` – paint splatters
+
+Only for the whole-title PNG (`glyfetti title`). Splats are scattered around the text.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `count` | number | 12 | splats behind the text |
+| `front` | number | 0 | small splats over the text |
+| `size` | `[min, max]` px | `[60, 180]` | splat radius range |
+| `colors` | list of hex | 6 bright colors | splat colors |
+| `seed` | number | 0 | random seed |
 
 ---
 
