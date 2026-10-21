@@ -623,8 +623,106 @@
               "minimum": 0,
               "maximum": 200,
               "default": 8
+            },
+            "splatter": {
+              "type": "object",
+              "description": "Paint splatters around the whole-title PNG.",
+              "additionalProperties": false,
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 200,
+                  "default": 12,
+                  "description": "Splats behind the text."
+                },
+                "front": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 200,
+                  "default": 0,
+                  "description": "Small splats over the text."
+                },
+                "size": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 1000
+                  },
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "default": [
+                    60,
+                    180
+                  ],
+                  "description": "Min and max splat radius (px)."
+                },
+                "colors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  },
+                  "minItems": 1
+                },
+                "seed": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0
+                }
+              }
             }
           }
+        },
+        "spray": {
+          "type": "object",
+          "description": "Spray-paint texture: grain on the letter and overspray dots around its edge.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Set false to disable the layer."
+            },
+            "grain": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.06,
+              "description": "Brightness noise on the painted letter."
+            },
+            "overspray": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.4,
+              "description": "Density of loose dots around the edge."
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 50,
+              "default": 6,
+              "description": "How far overspray reaches (px)."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "description": "Overspray color; defaults to the edge color."
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0.85
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -960,6 +1058,9 @@
               "maximum": 512
             }
           }
+        },
+        "spray": {
+          "$ref": "#/$defs/raw/properties/spray"
         }
       },
       "additionalProperties": false

@@ -140,3 +140,32 @@ def test_every_preset_supports_title_draft(tmp_path):
         image, report = title_image(style, tmp_path)
         assert image.getbbox(), style['name']
         assert not report['skipped'], style['name']
+
+
+def test_spray_adds_deterministic_overspray_outside_the_letters(style, tmp_path):
+    plain, _ = title_image(style, tmp_path)
+    style['spray'] = {'grain': 0.1, 'overspray': 0.6, 'radius': 6, 'color': '#00ff00', 'seed': 4}
+    first, _ = title_image(style, tmp_path)
+    second, _ = title_image(style, tmp_path)
+    assert first.tobytes() == second.tobytes()
+    assert first.size[0] > plain.size[0]
+    pixels = np.asarray(first)
+    assert ((pixels[..., 1] > 200) & (pixels[..., 0] < 60) & (pixels[..., 3] > 0)).any()
+
+
+def test_splatter_surrounds_the_title_and_is_seeded(style, tmp_path):
+    plain, _ = title_image(style, tmp_path)
+    style['title']['splatter'] = {'count': 5, 'front': 2, 'size': [20, 40], 'colors': ['#0000ff'], 'seed': 1}
+    first, report = title_image(style, tmp_path)
+    second, _ = title_image(style, tmp_path)
+    assert first.tobytes() == second.tobytes()
+    assert first.size[0] > plain.size[0] and report['size'] == first.size
+    pixels = np.asarray(first)
+    assert ((pixels[..., 2] > 200) & (pixels[..., 0] < 30) & (pixels[..., 3] == 255)).any()
+
+
+def test_spray_and_splatter_options_are_validated(style, tmp_path):
+    with pytest.raises(Exception):
+        title_image(dict(style, spray={'grain': 2}), tmp_path)
+    with pytest.raises(Exception):
+        title_image(dict(style, title={'splatter': {'size': [10]}}), tmp_path)

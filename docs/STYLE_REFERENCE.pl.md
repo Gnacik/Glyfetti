@@ -31,6 +31,7 @@ Każdy znak jest rysowany od spodu w tej kolejności:
 5. fill     – wypełnienie przodu litery gradientem
 6. bevel    – wypukłość: rozjaśnienie i przyciemnienie krawędzi
 7. gloss    – miękki połysk w górnej części litery
+8. spray    – ziarno sprayu i rozpylone kropki wokół krawędzi
 ```
 
 Każdą warstwę poza `outline` i `fill` można wyłączyć przez `"enabled": false` albo pominąć.
@@ -136,9 +137,10 @@ rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fo
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |
 | `embolden` | px | 0 | pogrubienie kreski przed nałożeniem efektów |
 | `jitter` | obiekt lub `null` | `null` | „skaczące” litery, patrz 3.9 |
+| `spray` | obiekt | – | faktura sprayu, patrz 3.10 |
 | `preview` | lista stringów | 3 linie testowe | teksty do podglądu `*_preview.png` |
 | `preview_bg` | HEX lub `"transparent"` | `#ffffff` | tło podglądu (tylko podgląd, atlas jest zawsze przezroczysty) |
-| `title` | obiekt | `{ "align": "center", "padding": 8 }` | opcje PNG całego napisu; align: left/center/right, padding: 0–200 pikseli końcowych |
+| `title` | obiekt | `{ "align": "center", "padding": 8 }` | opcje PNG całego napisu; align: left/center/right, padding: 0–200 pikseli końcowych; `splatter`, patrz 3.11 |
 | `auto_diacritics` | bool | `true` | składanie brakujących polskich liter z akcentów zawartych w foncie |
 
 ### 3.2 `fill` – wypełnienie (przód litery)
@@ -231,6 +233,29 @@ Starszy wariant efektu 3D: ciemna bryła pod całym obrysem. W nowych stylach zw
 
 Losowanie jest stałe dla danego znaku: „o” zawsze jest obrócone tak samo. W długim tekście
 powtarzające się litery mogą to zdradzać, więc do opisów i liczb ustaw `"jitter": null`.
+
+### 3.10 `spray` – faktura sprayu
+
+| Parametr | Typ | Domyślnie | Opis |
+|---|---|---|---|
+| `grain` | 0–1 | 0.06 | szum jasności na pomalowanej literze |
+| `overspray` | 0–1 | 0.4 | gęstość luźnych kropek farby wokół krawędzi |
+| `radius` | px | 6 | jak daleko sięgają kropki |
+| `color` | hex | kolor krawędzi | kolor kropek |
+| `opacity` | 0–1 | 0.85 | krycie kropek |
+| `seed` | liczba | 0 | ziarno losowania |
+
+### 3.11 `title.splatter` – rozbryzgi farby
+
+Tylko dla PNG całego napisu (`glyfetti title`). Plamy są rozrzucane wokół tekstu.
+
+| Parametr | Typ | Domyślnie | Opis |
+|---|---|---|---|
+| `count` | liczba | 12 | plamy za tekstem |
+| `front` | liczba | 0 | małe plamy na tekście |
+| `size` | `[min, max]` px | `[60, 180]` | zakres promienia plam |
+| `colors` | lista hex | 6 jaskrawych kolorów | kolory plam |
+| `seed` | liczba | 0 | ziarno losowania |
 
 ---
 
