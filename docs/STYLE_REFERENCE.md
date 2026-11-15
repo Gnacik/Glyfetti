@@ -278,6 +278,7 @@ Used by chat assistants (MCP) and as a cheat sheet for people.
 | candy, glossy, jelly | `shine` 0.7–0.9 |
 | matte | `shine` 0–0.2 |
 | narrow, slim, condensed | `width` 0.75–0.85 |
+| slanted, italic, dynamic, sporty | `slant` 10–15 |
 | thick, heavy, bold | `weight` 2–4 |
 | delicate, thin | `weight` 0, `outline_width: "thin"` |
 | fun, hand-drawn, fairy-tale | `playful` 0.3–0.5, font Grandstander or Chewy |

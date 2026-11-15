@@ -278,6 +278,7 @@ Używany przez czat (MCP) i jako ściągawka dla ludzi.
 | matowe | `shine` 0–0.2 |
 | wąskie, smukłe, condensed | `width` 0.75–0.85 |
 | grube, ciężkie, bold | `weight` 2–4 |
+| pochylone, kursywa, dynamiczne, sportowe | `slant` 10–15 |
 | delikatne, cienkie | `weight` 0, `outline_width: "thin"` |
 | zabawne, ręczne, bajkowe | `playful` 0.3–0.5, font Grandstander lub Chewy |
 | poważne, eleganckie | `playful: 0`, font Baloo 2 lub Dosis |
