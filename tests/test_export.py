@@ -173,3 +173,33 @@ def test_integer_json_numbers_and_fractional_outlines_export_integer_metrics(sty
     assert isinstance(metadata['size'], int)
     assert isinstance(metadata['baseline'], int)
     assert isinstance(metadata['scaleW'], int)
+
+
+def _slanted(style, tmp_path, slant):
+    style.update(chars='I', preview=['I'], outline={'color': '#000000', 'width': 0}, slant=slant)
+    path = tmp_path / f'style{slant}.json'
+    path.write_text(json.dumps(style), 'utf-8')
+    out = tmp_path / f'out{slant}'
+    build(path, out)
+    meta = json.loads((out / 'test.json').read_text())
+    glyph = next(c for c in meta['chars'] if c['id'] == ord('I'))
+    atlas = Image.open(out / 'test.png').getchannel('A')
+    alpha = atlas.crop((glyph['x'], glyph['y'], glyph['x'] + glyph['w'], glyph['y'] + glyph['h']))
+    return glyph, alpha, (out / 'test.fnt').read_text()
+
+
+@pytest.mark.parametrize('slant', [20, -20])
+def test_slant_shears_around_baseline_without_changing_advance(style, tmp_path, slant):
+    plain, _, plain_fnt = _slanted(style, tmp_path, 0)
+    glyph, alpha, fnt = _slanted(style, tmp_path, slant)
+    assert glyph['w'] > plain['w'] and glyph['xa'] == plain['xa']
+    assert glyph['yo'] == plain['yo'] and glyph['h'] == plain['h']
+    rows = [alpha.crop((0, y, alpha.width, y + 1)).getbbox() for y in (1, alpha.height - 2)]
+    assert (rows[0][0] > rows[1][0]) == (slant > 0)
+    assert 'italic=0' in plain_fnt and 'italic=1' in fnt
+
+
+def test_slant_is_validated(style):
+    style['slant'] = 45
+    with pytest.raises(ValueError, match='slant'):
+        validate_style(style)

@@ -154,6 +154,12 @@
           "minimum": 0.5,
           "maximum": 1.5
         },
+        "slant": {
+          "type": "number",
+          "description": "Italic shear angle in degrees around the baseline (positive leans right).",
+          "minimum": -30,
+          "maximum": 30
+        },
         "embolden": {
           "type": "number",
           "description": "Stroke thickening before effects (px).",
@@ -781,6 +787,9 @@
         },
         "condense": {
           "$ref": "#/$defs/raw/properties/condense"
+        },
+        "slant": {
+          "$ref": "#/$defs/raw/properties/slant"
         },
         "embolden": {
           "$ref": "#/$defs/raw/properties/embolden"

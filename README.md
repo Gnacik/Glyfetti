@@ -41,8 +41,8 @@ and keeps the look in a text file you can tweak, diff and reuse.
 
 - 🎨 **Layered effects:** vertical multi-stop gradient, outline, 3D side, bevel (from a distance field),
   gloss, drop shadow, glow, hard "sticker" base.
-- 🔤 **Any TTF/OTF font**, including variable fonts (`wght`, `wdth` axes), plus `condense` and `embolden`
-  to reshape a font without editing it.
+- 🔤 **Any TTF/OTF font**, including variable fonts (`wght`, `wdth` axes), plus `condense`, `embolden`
+  and `slant` (italic shear) to reshape a font without editing it.
 - 🤸 **Bouncy letters** (`jitter`): per-character rotation and offset for a hand-lettered look.
 - 🇵🇱 **Automatic diacritics:** missing Polish letters (ą ć ę ń ś ź ż) are composed from accents already in the
   font, so playful fonts like Chewy or Sniglet become usable for Polish text.
@@ -145,7 +145,7 @@ glyfetti title presets/honey_gold.json --text "Level Complete!" -o victory.png
 Title mode merges the plain letter shapes **before** applying outline, 3D side,
 bevel, gloss and shadow. Overlapping letters share one continuous outline instead
 of painting dark seams across each other. The gradient and highlight span the
-complete title. Kerning, tracking, condense, variable fonts, Polish diacritics and
+complete title. Kerning, tracking, condense, slant, variable fonts, Polish diacritics and
 jitter use the same shaping settings as the atlas renderer.
 
 Without `--text`, the command uses the style's `preview` lines. Actual newline

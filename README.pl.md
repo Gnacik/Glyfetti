@@ -41,8 +41,8 @@ zapisany jest w pliku tekstowym, który łatwo zmienić, porównać i użyć pon
 
 - 🎨 **Warstwy efektów:** gradient wielopunktowy, obrys, bok 3D, bevel (z mapy odległości), połysk, cień,
   poświata, twarda „naklejkowa” podstawa.
-- 🔤 **Dowolny font TTF/OTF**, także zmienny (osie `wght`, `wdth`), plus `condense` i `embolden` do
-  zwężania i pogrubiania bez edycji fontu.
+- 🔤 **Dowolny font TTF/OTF**, także zmienny (osie `wght`, `wdth`), plus `condense`, `embolden`
+  i `slant` do zwężania, pogrubiania i pochylania bez edycji fontu.
 - 🤸 **Skaczące litery** (`jitter`): obrót i przesunięcie każdego znaku dla efektu ręcznego liternictwa.
 - 🇵🇱 **Automatyczne polskie znaki:** brakujące ą ć ę ń ś ź ż są składane z akcentów zawartych w foncie,
   więc fonty takie jak Chewy czy Sniglet nadają się do polskich tekstów.
@@ -251,7 +251,7 @@ glyfetti title presets/honey_gold.json --text "Level Complete!" -o victory.png
 
 Tryb `title` łączy kształty liter przed nałożeniem efektów. Obrys, bok 3D, cień,
 połysk i gradient obejmują cały napis, więc zachodzące litery nie mają ciemnych
-szwów między sobą. Kerning, odstępy, zwężanie, osie fontu, polskie znaki i jitter
+szwów między sobą. Kerning, odstępy, zwężanie, pochylenie, osie fontu, polskie znaki i jitter
 korzystają z tych samych ustawień co atlas.
 
 Bez `--text` używany jest tekst z `preview`. Rzeczywiste znaki nowej linii w `--text`

@@ -135,6 +135,7 @@ rozwiniętego na inny komputer trzeba zaktualizować bezwzględną ścieżkę fo
 | `tracking` | px | 0 | dodatkowy odstęp między literami; ujemny zbliża litery i zlewa obrysy |
 | `line_height` | mnożnik | 1.15 | wysokość linii względem metryk fontu |
 | `condense` | 0.5–1.5 | 1.0 | skalowanie liter w poziomie (zwężenie < 1) |
+| `slant` | -30–30 | 0 | pochylenie (kursywa) w stopniach wokół linii bazowej; > 0 w prawo, efekty zostają proste |
 | `embolden` | px | 0 | pogrubienie kreski przed nałożeniem efektów |
 | `jitter` | obiekt lub `null` | `null` | „skaczące” litery, patrz 3.9 |
 | `spray` | obiekt | – | faktura sprayu, patrz 3.10 |
@@ -277,6 +278,7 @@ Używany przez czat (MCP) i jako ściągawka dla ludzi.
 | matowe | `shine` 0–0.2 |
 | wąskie, smukłe, condensed | `width` 0.75–0.85 |
 | grube, ciężkie, bold | `weight` 2–4 |
+| pochylone, kursywa, dynamiczne, sportowe | `slant` 10–15 |
 | delikatne, cienkie | `weight` 0, `outline_width: "thin"` |
 | zabawne, ręczne, bajkowe | `playful` 0.3–0.5, font Grandstander lub Chewy |
 | poważne, eleganckie | `playful: 0`, font Baloo 2 lub Dosis |
