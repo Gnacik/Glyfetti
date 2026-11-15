@@ -53,6 +53,7 @@ def title_image(style, base):
         estimated_width = math.ceil((right - left + 2 * glyph_padding) * condense)
         if condense != 1:
             estimated_width += 2 * glyph_padding
+        estimated_width += math.ceil(abs(math.tan(math.radians(st.get('slant', 0)))) * (bottom - top + 2 * glyph_padding))
         _check_canvas(estimated_width, bottom - top + 2 * glyph_padding, scale)
         mask, (bx, by), advance = shaped_glyph(char, font, st, scale, glyph_padding)
         image = Image.fromarray((mask * 255).astype(np.uint8))

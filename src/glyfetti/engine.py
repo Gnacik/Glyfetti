@@ -340,6 +340,16 @@ def shaped_glyph(ch, font, st, S, pad):
         if extra > 0:
             m = np.pad(m, ((0, 0), (extra, extra)))
             bx += extra
+    slant = st.get('slant', 0)
+    if slant:
+        t = math.tan(math.radians(slant))
+        H0, W0 = m.shape
+        left = math.ceil(max(t * (H0 - by), -t * by, 0))
+        right = math.ceil(max(t * by, -t * (H0 - by), 0))
+        im = Image.fromarray((m * 255).astype(np.uint8))
+        im = im.transform((W0 + left + right, H0), Image.AFFINE, (1, t, -(left + t * by), 0, 1, 0), Image.BICUBIC)
+        m = np.asarray(im, np.float32) / 255.0
+        bx += left
     if st.get('embolden', 0) > 0:
         m = grow(m, st['embolden'] * S)
     jit = st.get('jitter')
@@ -432,14 +442,14 @@ def pack_glyphs(glyphs, st, maximum, base_y, max_pages=16):
     return atlases, fnt_chars, packing
 
 
-def write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings):
+def write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings, italic=0):
     """Write the atlas PNG pages, BMFont .fnt and Unity (TextMeshPro) JSON."""
     W, H = atlases[0].size
     files = page_files(name, len(atlases))
     for atlas, file in zip(atlases, files):
         atlas.save(out / file)
     fnt_chars = [dict(id=32, x=0, y=0, width=0, height=0, xoffset=0, yoffset=0, xadvance=space_adv)] + fnt_chars
-    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, files, fnt_chars, kernings))
+    (out / f'{name}.fnt').write_bytes(bmfont_bytes(fnt_format, name, size, line_h, base_y, W, H, files, fnt_chars, kernings, italic))
     multi = len(files) > 1
     jd = {'name': name, 'size': size, 'lineHeight': line_h, 'baseline': base_y, 'scaleW': W, 'scaleH': H, **({'pages': files} if multi else {}), 'kernings': kernings,
           'chars': [{'id': 32, 'x': 0, 'y': 0, 'w': 0, 'h': 0, 'xo': 0, 'yo': 0, 'xa': space_adv}] +
@@ -517,7 +527,7 @@ def build(style_path, out_dir=None, preview_only=False, inspect=False, workers=N
 
     out = Path(out_dir) if out_dir else base / 'out'
     out.mkdir(parents=True, exist_ok=True)
-    write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings)
+    write_exports(out, name, fnt_format, size, line_h, base_y, atlases, glyphs, fnt_chars, space_adv, kernings, bool(st.get('slant')))
     if not inspect:
         write_previews(out, name, st, glyphs, kernings, line_h, space_adv, atlases)
     return {'glyphs': len(glyphs), 'atlas': (W, H), 'pages': len(atlases), 'out': out, 'name': name, 'skipped': skipped, 'kernings': len(kernings), 'packing': packing,

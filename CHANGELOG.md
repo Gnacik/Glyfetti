@@ -4,6 +4,7 @@
 
 - Add a `spray` layer: spray-paint grain on the letters and overspray dots around the edge.
 - Add `title.splatter`: seeded paint splatters behind and over a whole-title PNG.
+- Add `slant`: italic shear around the baseline (advance unchanged, BMFont `italic=1`); "Slant" slider in the editor.
 
 ## 0.2.0a1
 

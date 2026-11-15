@@ -5,10 +5,10 @@ FORMATS = ('text', 'xml', 'binary')
 CHAR_FIELDS = ('id', 'x', 'y', 'width', 'height', 'xoffset', 'yoffset', 'xadvance')
 
 
-def bmfont_bytes(fmt, face, size, line_height, base, scale_w, scale_h, pages, chars, kernings):
+def bmfont_bytes(fmt, face, size, line_height, base, scale_w, scale_h, pages, chars, kernings, italic=0):
     if isinstance(pages, str):
         pages = [pages]
-    info = {'face': face, 'size': size, 'bold': 0, 'italic': 0, 'charset': '', 'unicode': 1, 'stretchH': 100,
+    info = {'face': face, 'size': size, 'bold': 0, 'italic': int(italic), 'charset': '', 'unicode': 1, 'stretchH': 100,
             'smooth': 1, 'aa': 1, 'padding': '0,0,0,0', 'spacing': '2,2'}
     common = {'lineHeight': line_height, 'base': base, 'scaleW': scale_w, 'scaleH': scale_h, 'pages': len(pages), 'packed': 0}
     chars = [dict({k: c[k] for k in CHAR_FIELDS}, page=c.get('page', 0), chnl=15) for c in chars]

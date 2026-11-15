@@ -12,7 +12,7 @@ const knobs = [
   ['size', 'Size', 16, 180, 1, 'px'], ['outline.width', 'Outline', 0, 20, .5, 'px'],
   ['side.depth', '3D depth', 0, 30, 1, 'px'], ['gloss.opacity', 'Gloss', 0, 1, .01, ''],
   ['shadow.blur', 'Shadow softness', 0, 30, 1, 'px'], ['tracking', 'Letter spacing', -12, 16, 1, 'px'],
-  ['condense', 'Width', .5, 1.5, .01, '×']
+  ['condense', 'Width', .5, 1.5, .01, '×'], ['slant', 'Slant', -30, 30, 1, '°']
 ];
 function get(path) { return path.split('.').reduce((v, k) => v?.[k], style); }
 function set(path, value) { const keys = path.split('.'); let node = style; for (const k of keys.slice(0, -1)) node = node[k] ||= {}; node[keys.at(-1)] = value; }

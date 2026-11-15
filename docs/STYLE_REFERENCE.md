@@ -136,6 +136,7 @@ unchanged. Update absolute font paths when moving expanded styles to another com
 | `tracking` | px | 0 | extra letter spacing; negative pulls letters together and merges outlines |
 | `line_height` | multiplier | 1.15 | line height relative to font metrics |
 | `condense` | 0.5–1.5 | 1.0 | horizontal glyph scaling (condensed < 1) |
+| `slant` | -30–30 | 0 | italic shear in degrees around the baseline; > 0 leans right, effects stay upright |
 | `embolden` | px | 0 | stroke thickening before effects are applied |
 | `jitter` | object or `null` | `null` | "bouncy" letters, see 3.9 |
 | `spray` | object | – | spray-paint texture, see 3.10 |
